@@ -70,7 +70,7 @@ export class SettingsPanel {
             const webview = this._panel.webview;
             webview.html = await this._getWebviewContent(config);
         } catch (error) {
-            console.error('更新面板时出错:', error);
+            vscode.window.showErrorMessage(`更新面板时出错: ${error}`);
         }
     }
 
@@ -91,31 +91,24 @@ export class SettingsPanel {
 
     private async _getWebviewContent(config: any) {
         const webview = this._panel.webview;
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'style.css'));
-
-        // 注入配置到HTML
+        // const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
+        // const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'style.css'));
+        
+        // 读取 HTML 文件并注入配置
+        const htmlPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'simpleWebview.html');
+        let htmlContent = await fs.promises.readFile(htmlPath.fsPath, 'utf8');
+        
+        // 注入配置数据
         const configScript = `
             <script>
                 window.initialConfig = ${JSON.stringify(config)};
             </script>
         `;
-
-        return `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" href="${styleUri}">
-                ${configScript}
-            </head>
-            <body>
-                <!-- 你的HTML内容 -->
-                <script src="${scriptUri}"></script>
-            </body>
-            </html>
-        `;
+        
+        // 将配置注入到 HTML 中的占位符位置
+        htmlContent = htmlContent.replace('// CONFIGURATION_PLACEHOLDER', configScript);
+        
+        return htmlContent;
     }
 
     public dispose() {
@@ -153,59 +146,59 @@ export class SettingsPanel {
     }
 
     private async _getAllThemes(): Promise<ThemeInfo[]> {
-        console.log('开始获取主题列表...');
-        const themes: ThemeInfo[] = [];
-        
-        // 添加内置主题
-        themes.push(
-            { 
-                id: 'Default Dark+', 
-                label: 'Default Dark+', 
-                description: 'Built-in Dark Theme',
-                extension: 'vscode.built-in',
-                originalLabel: 'Default Dark+'
-            },
-            { 
-                id: 'Default Light+', 
-                label: 'Default Light+', 
-                description: 'Built-in Light Theme',
-                extension: 'vscode.built-in',
-                originalLabel: 'Default Light+'
-            }
-        );
-        
-        // 从扩展中获取主题
-        for (const extension of vscode.extensions.all) {
-            const contributes = extension.packageJSON?.contributes;
-            if (!contributes?.themes) {
-                continue;
+        try {
+            const themes: ThemeInfo[] = [];
+            
+            // 添加内置主题
+            themes.push(
+                { 
+                    id: 'Default Dark+', 
+                    label: 'Default Dark+', 
+                    description: 'Built-in Dark Theme',
+                    extension: 'vscode.built-in',
+                    originalLabel: 'Default Dark+'
+                },
+                { 
+                    id: 'Default Light+', 
+                    label: 'Default Light+', 
+                    description: 'Built-in Light Theme',
+                    extension: 'vscode.built-in',
+                    originalLabel: 'Default Light+'
+                }
+            );
+            
+            // 从扩展中获取主题
+            for (const extension of vscode.extensions.all) {
+                const contributes = extension.packageJSON?.contributes;
+                if (!contributes?.themes) {
+                    continue;
+                }
+                
+                for (const theme of contributes.themes) {
+                    // 保存原始标签
+                    const originalLabel = theme.label;
+                    
+                    // 处理主题ID和标签
+                    const themeId = this._sanitizeThemeId(theme.id || theme.label);
+                    const displayLabel = this._getDisplayLabel(theme.label, extension.id);
+                    
+                    themes.push({
+                        id: themeId,
+                        label: displayLabel,
+                        description: theme.description,
+                        extension: extension.id,
+                        originalLabel: originalLabel
+                    });
+                }
             }
             
-            console.log(`处理扩展 ${extension.id} 的主题`);
-            for (const theme of contributes.themes) {
-                // 保存原始标签
-                const originalLabel = theme.label;
-                
-                // 处理主题ID和标签
-                const themeId = this._sanitizeThemeId(theme.id || theme.label);
-                const displayLabel = this._getDisplayLabel(theme.label, extension.id);
-                
-                themes.push({
-                    id: themeId,
-                    label: displayLabel,
-                    description: theme.description,
-                    extension: extension.id,
-                    originalLabel: originalLabel
-                });
-                
-                console.log(`添加主题: ${displayLabel} (${themeId})`);
-            }
+            // 去重并排序
+            const uniqueThemes = this._removeDuplicateThemes(themes);
+            return uniqueThemes;
+        } catch (error) {
+            vscode.window.showErrorMessage(`获取主题列表失败: ${error}`);
+            return [];
         }
-        
-        // 去重并排序
-        const uniqueThemes = this._removeDuplicateThemes(themes);
-        console.log(`返回 ${uniqueThemes.length} 个唯一主题`);
-        return uniqueThemes;
     }
 
     private _sanitizeThemeId(id: string): string {
@@ -273,144 +266,108 @@ export class SettingsPanel {
     }
 
     private _setWebviewMessageListener(webview: vscode.Webview) {
-        console.log("Setting up WebView message listener");
-        
-        // 立即获取并发送主题列表
-        this._getAllThemes().then(themes => {
-            console.log(`Sending ${themes.length} themes to WebView`);
-            webview.postMessage({ 
-                type: 'themeList', 
-                themes 
-            });
-        }).catch(error => {
-            console.error("Error getting themes:", error);
-            // 发送默认主题作为后备
-            this._sendDefaultThemes(webview);
-        });
-
         webview.onDidReceiveMessage(
-            async (message) => {
-                console.log("Received message from WebView:", message.command);
-                
-                try {
-                    let themes;
-                    let config;
-                    // let newDefaultTheme;
-                    // let currentTheme;
-                    // let shouldApplyTheme;
-                    let status;
-                    let mode;
-                    let interval;
-                    let times;
-                    let statusDetails;
+            async (message: { 
+                command: string; 
+                settings?: {
+                    defaultTheme: string;
+                    switchThemes: string[];
+                    switchInterval: number;
+                    switchTimes: string[];
+                    switchMode: string;
+                    status: string;
+                }; 
+                timestamp?: string 
+            }) => {
+                // 处理来自WebView的消息
+                if (!message || !message.command) {
+                    return;
+                }
 
-                    switch (message.command) {
-                        case 'webviewReady':
-                            console.log("WebView is ready at:", message.timestamp);
-                            // WebView 准备好后，重新发送主题列表
-                            themes = await this._getAllThemes();
+                switch (message.command) {
+                    case 'ready':
+                        // WebView准备就绪
+                        break;
+                    case 'getThemes':
+                        // WebView请求获取主题列表
+                        try {
+                            const themes = await this._getAllThemes();
                             webview.postMessage({ 
                                 type: 'themeList', 
                                 themes 
                             });
-                            break;
-                            
-                        case 'getThemes':
-                            console.log("WebView requested themes");
-                            themes = await this._getAllThemes();
-                            webview.postMessage({ 
-                                type: 'themeList', 
-                                themes 
-                            });
-                            break;
-                            
-                        case 'saveSettings':
-                            console.log('收到保存设置请求:', message.settings);
-                            await this._handleSaveSettings(message.settings);
-                            break;
-                            
-                        case 'toggleStatus':
-                            console.log("Toggling status");
-                            // Execute the command to toggle status
+                        } catch (error) {
+                            vscode.window.showErrorMessage(`获取主题列表失败: ${error}`);
+                        }
+                        break;
+                    case 'saveSettings':
+                        // 保存设置
+                        try {
+                            if (message.settings) {
+                                await this._handleSaveSettings(message.settings);
+                            } else {
+                                vscode.window.showErrorMessage('保存设置失败：未提供有效的设置数据');
+                            }
+                        } catch (error) {
+                            vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
+                        }
+                        break;
+                    case 'toggleStatus':
+                        // 切换状态
+                        try {
                             await vscode.commands.executeCommand('alfred-changing.toggleStatus');
-                            
-                            // Get updated status
-                            setTimeout(async () => {
-                                config = vscode.workspace.getConfiguration('alfredChanging');
-                                status = config.get('status') as SwitchStatus;
-                                mode = config.get('switchMode') as string;
-                                interval = config.get('switchInterval') as number;
-                                times = config.get('switchTimes') as string[];
-                                statusDetails = this._getStatusDetails(status, mode, interval, times);
-                                
-                                webview.postMessage({ 
-                                    type: 'statusUpdate', 
-                                    status: status, 
-                                    details: statusDetails 
-                                });
-                            }, 500); // Small delay to allow status to update
-                            break;
-                            
-                        case 'debug':
-                            // 处理调试消息
-                            console.log('收到调试消息:', message);
-                            break;
-                            
-                        default:
-                            console.log("Unknown message command:", message.command);
-                    }
-                } catch (error) {
-                    console.error("Error handling webview message:", error);
-                    vscode.window.showErrorMessage(`Error in settings panel: ${error}`);
+                        } catch (error) {
+                            vscode.window.showErrorMessage(`切换状态时出错: ${error}`);
+                        }
+                        break;
+                    case 'debug':
+                        // 调试消息，仅在开发时使用
+                        break;
+                    default:
+                        // 未知命令
+                        break;
                 }
             },
-            undefined,
+            null,
             this._disposables
         );
     }
 
-    // 辅助方法：发送默认主题到WebView
-    private _sendDefaultThemes(webview: vscode.Webview) {
-        // 默认主题列表
-        const defaultThemes = [
-            { id: 'Default Dark+', label: 'Default Dark+', description: 'VS Code Built-in Theme' },
-            { id: 'Default Light+', label: 'Default Light+', description: 'VS Code Built-in Theme' },
-            { id: 'Visual Studio Dark', label: 'Visual Studio Dark', description: 'VS Code Built-in Theme' },
-            { id: 'Visual Studio Light', label: 'Visual Studio Light', description: 'VS Code Built-in Theme' },
-            { id: 'High Contrast', label: 'High Contrast', description: 'VS Code Built-in Theme' },
-            { id: 'Monokai', label: 'Monokai', description: 'VS Code Built-in Theme' },
-            { id: 'Solarized Dark', label: 'Solarized Dark', description: 'VS Code Built-in Theme' },
-            { id: 'Solarized Light', label: 'Solarized Light', description: 'VS Code Built-in Theme' },
-        ];
-        
-        // 发送到WebView
+    // 修改 _sendDefaultThemes 方法，添加保存的配置参数
+    private async _sendDefaultThemes(webview: vscode.Webview, savedConfig?: any) {
         try {
-            console.log("Sending default themes immediately");
-            webview.postMessage({ 
+            // 默认主题列表
+            const defaultThemes = [
+                { id: 'Default Dark+', label: 'Default Dark+', description: 'VS Code Built-in Theme' },
+                { id: 'Default Light+', label: 'Default Light+', description: 'VS Code Built-in Theme' },
+                { id: 'Visual Studio Dark', label: 'Visual Studio Dark', description: 'VS Code Built-in Theme' },
+                { id: 'Visual Studio Light', label: 'Visual Studio Light', description: 'VS Code Built-in Theme' },
+                { id: 'High Contrast', label: 'High Contrast', description: 'VS Code Built-in Theme' },
+                { id: 'Monokai', label: 'Monokai', description: 'VS Code Built-in Theme' },
+                { id: 'Solarized Dark', label: 'Solarized Dark', description: 'VS Code Built-in Theme' },
+                { id: 'Solarized Light', label: 'Solarized Light', description: 'VS Code Built-in Theme' },
+            ];
+            
+            // 发送主题列表到WebView
+            webview.postMessage({
                 type: 'themeList', 
-                themes: defaultThemes 
+                themes: defaultThemes,
+                savedConfig: savedConfig || this._loadSavedConfig()
             });
-            console.log(`Sent ${defaultThemes.length} default themes`);
-        } catch (err) {
-            console.error("Error sending default themes:", err);
-            // 尝试延迟发送
-            setTimeout(() => {
-                try {
-                    console.log("Retrying sending default themes after delay");
-                    webview.postMessage({ 
-                        type: 'themeList', 
-                        themes: defaultThemes 
-                    });
-                    console.log("Retry successful");
-                } catch (retryErr) {
-                    console.error("Retry failed:", retryErr);
-                }
-            }, 200);
+        } catch (error) {
+            vscode.window.showErrorMessage(`发送默认主题列表时出错: ${error}`);
         }
     }
 
     // 保存配置
-    private async _handleSaveSettings(message: any) {
+    private async _handleSaveSettings(message: {
+        defaultTheme: string;
+        switchThemes: string[];
+        switchInterval: number;
+        switchTimes: string[];
+        switchMode: string;
+        status: string;
+    }) {
         try {
             const config = vscode.workspace.getConfiguration('alfredChanging');
             
@@ -431,10 +388,13 @@ export class SettingsPanel {
 
             // 等待所有配置更新完成
             await Promise.all(updates);
-
-            console.log('配置已保存:', message);
+            // 如果默认主题已更改或者与当前主题不同 ，更新全局配置
+            const currentTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
+            if (message.defaultTheme !== config.get('defaultTheme')|| currentTheme !== message.defaultTheme) {
+                await vscode.workspace.getConfiguration('workbench').update('colorTheme', message.defaultTheme, vscode.ConfigurationTarget.Global);
+            }
         } catch (error) {
-            console.error('保存配置时出错:', error);
+            vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
         }
     }
 
@@ -460,7 +420,6 @@ export class SettingsPanel {
 
     // 备用方法，返回原始的硬编码 HTML
     private _getDefaultSimpleWebviewContent(): string {
-        console.log('使用默认的WebView内容');
         return `<!DOCTYPE html>
 <html lang="en">
 <head>

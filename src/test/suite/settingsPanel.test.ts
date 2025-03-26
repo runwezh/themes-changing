@@ -85,7 +85,6 @@ suite('Settings Panel Test', () => {
     test('Test save button changes theme to default theme', async () => {
         // 记录初始主题
         const initialTheme = await vscode.workspace.getConfiguration('workbench').get('colorTheme');
-        console.log('测试开始时的主题:', initialTheme);
         
         // 创建并显示设置面板
         await vscode.commands.executeCommand('alfred-changing.openSettings');
@@ -114,8 +113,6 @@ suite('Settings Panel Test', () => {
                 })));
             }, [{id: 'Default Dark+', label: 'Default Dark+'}, {id: 'Default Light+', label: 'Default Light+'}]);
         
-        console.log('可用主题列表:', allThemes.map(theme => theme.label).join(', '));
-        
         // 获取当前主题
         const initialCurrentTheme = await vscode.workspace.getConfiguration('workbench').get('colorTheme') as string;
         
@@ -127,11 +124,8 @@ suite('Settings Panel Test', () => {
         
         // 选择随机一个可用的主题作为测试主题
         const testTheme = availableThemes[Math.floor(Math.random() * availableThemes.length)].id;
-        console.log('当前主题:', initialCurrentTheme);
-        console.log('将要切换到的测试主题:', testTheme);
         
         // 首先直接设置主题
-        console.log('直接设置主题为:', testTheme);
         await vscode.workspace.getConfiguration('workbench').update('colorTheme', testTheme, true);
         
         // 等待主题切换生效
@@ -139,7 +133,7 @@ suite('Settings Panel Test', () => {
         
         // 验证主题是否已经切换
         const themeAfterDirectChange = await vscode.workspace.getConfiguration('workbench').get('colorTheme');
-        console.log('直接设置后的主题:', themeAfterDirectChange);
+        assert.strictEqual(themeAfterDirectChange, testTheme, '直接设置主题失败');
         
         // 模拟保存设置
         const message = {
@@ -153,7 +147,6 @@ suite('Settings Panel Test', () => {
         };
         
         // 发送保存设置消息
-        console.log('发送保存设置消息:', JSON.stringify(message, null, 2));
         await vscode.commands.executeCommand('alfred-changing.updateConfig', message);
         
         // 等待设置保存和主题切换
@@ -164,7 +157,6 @@ suite('Settings Panel Test', () => {
         let finalTheme = '';
         while (maxRetries > 0) {
             finalTheme = await vscode.workspace.getConfiguration('workbench').get('colorTheme') as string;
-            console.log(`当前主题 (剩余重试次数 ${maxRetries}):`, finalTheme);
             
             if (finalTheme === testTheme) {
                 break;
@@ -172,7 +164,6 @@ suite('Settings Panel Test', () => {
             
             // 如果主题没有切换成功，尝试再次直接设置
             if (maxRetries === 2) {
-                console.log('重试：直接设置主题');
                 await vscode.workspace.getConfiguration('workbench').update('colorTheme', testTheme, true);
             }
             
@@ -186,7 +177,6 @@ suite('Settings Panel Test', () => {
         assert.strictEqual(finalTheme, testTheme, '主题应该切换到测试主题');
         
         // 清理：恢复原始主题
-        console.log('恢复原始主题:', initialTheme);
         await vscode.workspace.getConfiguration('workbench').update('colorTheme', initialTheme, true);
         
         // 关闭设置面板

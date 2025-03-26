@@ -108,7 +108,6 @@ export class ThemeSwitcher {
             const [hours, minutes, seconds] = timeString.split(':').map(Number);
             
             if (isNaN(hours) || isNaN(minutes) || (seconds !== undefined && isNaN(seconds))) {
-                console.error(`Invalid time format: ${timeString}`);
                 return;
             }
             
@@ -137,7 +136,7 @@ export class ThemeSwitcher {
             // Store timer reference
             this.timeTimers.push(timer);
         } catch (error) {
-            console.error(`Error scheduling time switch for ${timeString}:`, error);
+            return;
         }
     }
 
@@ -273,14 +272,8 @@ export class ThemeSwitcher {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Congratulations, your extension "Alfred Changing" is now active!');
-
-    // Show notification to ensure users know the extension is activated
-    vscode.window.showInformationMessage('Theme switching extension is now active. Use "Alfred Changing: Open Theme Settings" from the command palette to configure');
-
     const themeSwitcher = new ThemeSwitcher(context);
     
-    // Register commands
     context.subscriptions.push(
         vscode.commands.registerCommand('alfred-changing.toggleStatus', () => {
             themeSwitcher.toggleStatus();
@@ -290,22 +283,18 @@ export function activate(context: vscode.ExtensionContext) {
             SettingsPanel.createOrShow(context.extensionUri);
         }),
         
-        // Register command to update configuration from settings panel
         vscode.commands.registerCommand('alfred-changing.updateConfig', (newConfig: Partial<ThemeConfig>) => {
             themeSwitcher.updateConfig(newConfig);
         }),
         
-        // 添加命令用于测试：应用默认主题
         vscode.commands.registerCommand('alfred-changing.applyDefaultTheme', async () => {
             const config = vscode.workspace.getConfiguration('alfredChanging');
             const defaultTheme = config.get('defaultTheme') as string;
             
             if (defaultTheme) {
-                console.log('应用默认主题命令：', defaultTheme);
                 await vscode.workspace.getConfiguration('workbench').update('colorTheme', defaultTheme, true);
                 vscode.window.showInformationMessage(`主题已切换为默认主题: ${defaultTheme}`);
             } else {
-                console.log('未设置默认主题');
                 vscode.window.showWarningMessage('未设置默认主题');
             }
         })

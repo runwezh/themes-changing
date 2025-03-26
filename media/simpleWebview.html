@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主题切换设置</title>
+    <style>
+        body { 
+            padding: 20px; 
+            font-family: sans-serif;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+        .theme-list {
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--vscode-input-border, #ccc);
+            border-radius: 4px;
+            padding: 8px;
+            background: var(--vscode-input-background);
+        }
+        .theme-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin: 2px 0;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+        .theme-item:hover {
+            background-color: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.1));
+        }
+        .theme-item input[type="checkbox"] {
+            margin: 0;
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+        }
+        .theme-item label {
+            margin: 0;
+            font-weight: normal;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .theme-item .theme-label {
+            font-size: 14px;
+            color: var(--vscode-foreground);
+            margin-bottom: 2px;
+        }
+        .theme-item .theme-description {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground, #666);
+        }
+        .time-point-container {
+            margin-bottom: 10px;
+        }
+        .time-point-entry {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .time-point-entry input {
+            flex-grow: 1;
+            margin-right: 8px;
+            margin-bottom: 0;
+        }
+        .time-point-entry button {
+            padding: 4px 8px;
+            background-color: #e74c3c;
+        }
+        .add-time-btn {
+            margin-top: 5px;
+            padding: 4px 8px;
+            background-color: #2ecc71;
+        }
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status-not_set {
+            background-color: #9d9d9d;
+            color: white;
+        }
+        .status-running {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status-paused {
+            background-color: #FF9800;
+            color: white;
+        }
+        .status-details {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+        }
+        .button-container {
+            display: flex;
+            margin-top: 20px;
+        }
+        .debug-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px dashed #666;
+            background-color: rgba(0,0,0,0.05);
+        }
+        .debug-message {
+            margin-top: 8px;
+            padding: 8px;
+            background-color: #f0f0f0;
+            border-left: 4px solid #ccc;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .debug-message.error {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+        .debug-message.success {
+            background-color: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <h1>主题切换设置</h1>
+    <p>在此页面配置主题切换的相关设置项。</p>
+    
+    <!-- 第一步：主题选择功能 -->
+    <div class="form-group">
+        <label for="defaultTheme">默认主题</label>
+        <select id="defaultTheme">
+            <option value="">请选择默认主题</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>主题切换列表</label>
+        <div id="switchThemes" class="theme-list">
+            <p>加载中...</p>
+        </div>
+    </div>
+    
+    <!-- 第二步：模式设置功能 -->
+    <div class="form-group">
+        <label for="switchMode">切换模式</label>
+        <select id="switchMode">
+            <option value="interval">按时间间隔</option>
+            <option value="time">按特定时间点</option>
+        </select>
+    </div>
+
+    <div class="form-group" id="intervalGroup">
+        <label for="switchInterval">时间间隔（分钟）</label>
+        <input type="number" id="switchInterval" min="1" max="60" value="30">
+    </div>
+
+    <div class="form-group" id="timeGroup" style="display: none;">
+        <label>切换时间点（最多5个）</label>
+        <div id="timePointsContainer" class="time-point-container">
+            <div class="time-point-entry" data-index="0">
+                <input type="time" step="1" class="time-input" value="12:00:00">
+                <button class="delete-time-btn">删除</button>
+            </div>
+        </div>
+        <button id="addTimeBtn" class="add-time-btn">添加时间点</button>
+    </div>
+    
+    <!-- 第三步：状态管理功能 -->
+    <div class="form-group">
+        <label>当前状态</label>
+        <div class="status-indicator" id="statusIndicator">
+            <span id="statusTextContent">加载中...</span>
+        </div>
+        <div class="status-details" id="statusDetails">
+            <span id="statusDetailsContent">加载详细信息中...</span>
+        </div>
+    </div>
+    
+    <!-- 按钮区域 -->
+    <div class="button-container">
+        <button id="saveBtn">保存设置</button>
+        <button id="toggleBtn">启动/暂停</button>
+    </div>
+
+    <div class="debug-buttons">
+        <button id="testChannelBtn">测试消息通道</button>
+        <button id="testJsBtn">测试JS功能</button>
+        <button id="directSaveBtn">直接保存</button>
+        <button id="debugBtn">调试保存流程</button>
+    </div>
+
+    <div class="debug-container"></div>
+
+    <script>
+        // 安全获取VS Code API
+        let vscode = undefined;
+        try {
+            if (typeof acquireVsCodeApi === 'function') {
+                vscode = acquireVsCodeApi();
+                console.log('VS Code API获取成功');
+            }
+        } catch (err) {
+            console.error('获取VS Code API失败:', err);
+        }
+
+        // 全局配置对象（通过脚本注入）
+        window.appConfig = window.appConfig || {
+            defaultTheme: '',
+            switchThemes: [],
+            switchInterval: 30,
+            switchTimes: ['12:00:00'],
+            switchMode: 'interval',
+            status: 'not_set'
+        };
+
+        // 定义表单验证
+        function validateForm() {
+            // 获取所选的主题列表
+            const checkedBoxes = document.querySelectorAll('#switchThemes input[type="checkbox"]:checked');
+            console.log('验证表单 - 选中的复选框数量:', checkedBoxes.length);
+            
+            // 记录找到的所有主题
+            const selectedThemes = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+            console.log('验证表单 - 选中的主题IDs:', selectedThemes);
+            
+            // 获取默认主题
+            const defaultTheme = document.getElementById('defaultTheme').value;
+            console.log('验证表单 - 默认主题:', defaultTheme);
+            
+            // 获取切换模式
+            const switchMode = document.getElementById('switchMode').value;
+            console.log('验证表单 - 切换模式:', switchMode);
+            
+            // 获取时间点列表
+            const switchTimes = Array.from(
+                document.querySelectorAll('.time-point-entry input[type="time"]')
+            ).map(input => input.value);
+            console.log('验证表单 - 时间点列表:', switchTimes);
+            
+            // 获取切换间隔
+            const switchInterval = parseInt(document.getElementById('switchInterval').value, 10);
+            console.log('验证表单 - 切换间隔:', switchInterval);
+            
+            // 表单验证
+            let errorMessage = '';
+            
+            if (!defaultTheme) {
+                errorMessage = '错误：必须选择默认主题';
+            } else if (selectedThemes.length === 0) {
+                errorMessage = '错误：必须至少选择一个切换主题';
+            } else if (switchMode === 'interval' && (isNaN(switchInterval) || switchInterval < 1)) {
+                errorMessage = '错误：时间间隔必须是大于0的数字';
+            } else if (switchMode === 'time' && switchTimes.length === 0) {
+                errorMessage = '错误：必须设置至少一个时间点';
+            }
+            
+            return {
+                isValid: !errorMessage,
+                message: errorMessage,
+                data: {
+                    defaultTheme,
+                    switchThemes: selectedThemes,
+                    switchMode,
+                    switchInterval: switchMode === 'interval' ? switchInterval : 0,
+                    switchTimes: switchMode === 'time' ? switchTimes : []
+                }
+            };
+        }
+
+        // 保存设置处理函数
+        function handleSaveClick() {
+            console.log('保存按钮被点击');
+            try {
+                const validation = validateForm();
+                if (!validation.isValid) {
+                    showMessage(validation.message);
+                    console.error(validation.message);
+                    return;
+                }
+                
+                saveSettings(validation.data);
+            } catch (err) {
+                console.error('保存出错:', err);
+                showMessage('错误：' + (err.message || '未知错误'));
+            }
+        }
+
+        // 保存设置到VS Code
+        function saveSettings(settingsData) {
+            console.log('执行saveSettings函数');
+            try {
+                console.log('保存设置:', settingsData);
+                
+                // 发送消息到扩展
+                if (typeof vscode !== 'undefined') {
+                    console.log('发送消息到VS Code扩展');
+                    
+                    vscode.postMessage({
+                        command: 'saveSettings',
+                        settings: settingsData
+                    });
+                    
+                    showMessage('设置已保存');
+                } else {
+                    throw new Error('vscode对象不可用');
+                }
+            } catch (err) {
+                console.error('保存设置时出错:', err);
+                throw err;
+            }
+        }
+
+        // 测试消息通道
+        function testMessageChannel() {
+            console.log('测试消息通道');
+            try {
+                if (typeof vscode !== 'undefined') {
+                    vscode.postMessage({
+                        command: 'test',
+                        text: '这是一条测试消息，时间: ' + new Date().toISOString()
+                    });
+                    showMessage('测试消息已发送');
+                } else {
+                    showMessage('错误: vscode对象不可用');
+                }
+            } catch (err) {
+                console.error('测试消息发送失败:', err);
+                showMessage('测试消息发送失败: ' + err.message);
+            }
+        }
+
+        // 调试保存流程
+        function debugSaveProcess() {
+            console.log('开始调试保存流程');
+            
+            // 1. 检查表单元素是否存在
+            const formElements = {
+                defaultTheme: document.getElementById('defaultTheme'),
+                switchInterval: document.getElementById('switchInterval'),
+                switchModeSelect: document.getElementById('switchMode'),
+                switchThemes: document.querySelectorAll('#switchThemes input[type="checkbox"]:checked')
+            };
+            
+            // 2. 检查vscode对象是否可用
+            const vscodeAvailable = typeof vscode !== 'undefined';
+            
+            let statusText = `表单元素检查:
+                默认主题选择器: ${formElements.defaultTheme ? '存在' : '不存在'}
+                切换间隔: ${formElements.switchInterval ? '存在' : '不存在'}
+                切换模式: ${formElements.switchModeSelect ? '存在' : '不存在'}
+                选中的主题数量: ${formElements.switchThemes.length}
+                vscode对象: ${vscodeAvailable ? '可用' : '不可用'}
+            `;
+            
+            console.log(statusText);
+            showMessage(statusText);
+            
+            if (vscodeAvailable) {
+                // 3. 尝试发送测试消息
+                try {
+                    vscode.postMessage({
+                        command: 'debug',
+                        text: '这是一条测试消息'
+                    });
+                    showMessage('测试消息发送成功');
+                } catch (err) {
+                    showMessage('消息发送失败: ' + err.message);
+                }
+            }
+            
+            // 4. 显示当前配置和表单状态
+            const currentFormState = validateForm();
+            showMessage('表单验证结果: ' + (currentFormState.isValid ? '有效' : '无效'));
+            if (!currentFormState.isValid) {
+                showMessage('错误信息: ' + currentFormState.message);
+            }
+            
+            showMessage('全局配置: ' + JSON.stringify(window.appConfig || '未设置'));
+            showMessage('当前表单数据: ' + JSON.stringify(currentFormState.data));
+        }
+
+        // 显示消息
+        function showMessage(message) {
+            console.log('显示消息:', message);
+            
+            // 创建消息元素
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'debug-message';
+            messageDiv.textContent = message;
+            document.querySelector('.debug-container')?.appendChild(messageDiv) || document.body.appendChild(messageDiv);
+            
+            // 自动滚动到底部
+            window.scrollTo(0, document.body.scrollHeight);
+            
+            // 5秒后淡出
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                setTimeout(() => {
+                    try {
+                        messageDiv.parentNode.removeChild(messageDiv);
+                    } catch (e) {}
+                }, 500);
+            }, 5000);
+        }
+
+        // 切换状态
+        function toggleStatus() {
+            if (typeof vscode !== 'undefined') {
+                vscode.postMessage({
+                    command: 'toggleStatus'
+                });
+                showMessage('正在切换状态...');
+            } else {
+                showMessage('无法切换状态：vscode API不可用');
+            }
+        }
+
+        // 处理模式切换
+        function handleModeChange() {
+            const mode = document.getElementById('switchMode').value;
+            const intervalGroup = document.getElementById('intervalGroup');
+            const timeGroup = document.getElementById('timeGroup');
+            
+            if (intervalGroup && timeGroup) {
+                intervalGroup.style.display = mode === 'interval' ? 'block' : 'none';
+                timeGroup.style.display = mode === 'time' ? 'block' : 'none';
+            }
+        }
+
+        // 添加时间点
+        function addTimePoint() {
+            const container = document.getElementById('timePointsContainer');
+            if (!container) return;
+            
+            const entries = container.querySelectorAll('.time-point-entry');
+            if (entries.length >= 5) {
+                showMessage('最多允许5个时间点');
+                return;
+            }
+            
+            const newEntry = document.createElement('div');
+            newEntry.className = 'time-point-entry';
+            newEntry.dataset.index = entries.length.toString();
+            
+            const timeInput = document.createElement('input');
+            timeInput.type = 'time';
+            timeInput.step = '1';
+            timeInput.className = 'time-input';
+            timeInput.value = '12:00:00';
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-time-btn';
+            deleteBtn.textContent = '删除';
+            deleteBtn.onclick = function() { deleteTimePoint(this); };
+            
+            newEntry.appendChild(timeInput);
+            newEntry.appendChild(deleteBtn);
+            container.appendChild(newEntry);
+        }
+
+        // 删除时间点
+        function deleteTimePoint(button) {
+            const container = document.getElementById('timePointsContainer');
+            if (!container) return;
+            
+            const entries = container.querySelectorAll('.time-point-entry');
+            if (entries.length <= 1) {
+                showMessage('不能删除最后一个时间点');
+                return;
+            }
+            
+            const entry = button.closest('.time-point-entry');
+            if (entry) entry.remove();
+        }
+
+        // 初始化表单值
+        function initializeFormValues() {
+            if (!window.appConfig) {
+                console.warn('appConfig不存在，无法初始化表单值');
+                return;
+            }
+            
+            console.log('初始化表单值:', JSON.stringify(window.appConfig, null, 2));
+            
+            // 显示初始化信息
+            showMessage('正在初始化表单，配置数据: ' + JSON.stringify(window.appConfig, null, 2));
+            
+            // 设置默认主题
+            const defaultThemeSelect = document.getElementById('defaultTheme');
+            if (defaultThemeSelect && window.appConfig.defaultTheme) {
+                console.log('设置默认主题:', window.appConfig.defaultTheme);
+                defaultThemeSelect.value = window.appConfig.defaultTheme;
+            }
+            
+            // 设置切换模式
+            const switchModeSelect = document.getElementById('switchMode');
+            if (switchModeSelect && window.appConfig.switchMode) {
+                console.log('设置切换模式:', window.appConfig.switchMode);
+                switchModeSelect.value = window.appConfig.switchMode;
+                handleModeChange(); // 更新UI显示
+            }
+            
+            // 设置时间间隔
+            const switchIntervalInput = document.getElementById('switchInterval');
+            if (switchIntervalInput && window.appConfig.switchInterval) {
+                console.log('设置时间间隔:', window.appConfig.switchInterval);
+                switchIntervalInput.value = window.appConfig.switchInterval;
+            }
+            
+            // 更新状态显示
+            updateStatus(window.appConfig.status, window.STATUS_DETAILS || '');
+            
+            // 设置已选择的主题列表
+            if (window.appConfig.switchThemes && window.appConfig.switchThemes.length > 0) {
+                console.log('设置主题列表. 已保存的主题:', window.appConfig.switchThemes);
+                window.appConfig.switchThemes.forEach(themeId => {
+                    try {
+                        // 使用更安全的方式找到复选框 - 遍历所有主题复选框
+                        let found = false;
+                        const checkboxes = document.querySelectorAll('#switchThemes input[type="checkbox"]');
+                        checkboxes.forEach(checkbox => {
+                            if (checkbox.value === themeId) {
+                                checkbox.checked = true;
+                                found = true;
+                                console.log('成功选中主题:', themeId);
+                            }
+                        });
+                        
+                        if (!found) {
+                            console.warn('找不到主题复选框:', themeId, '(即使遍历了所有复选框)');
+                        }
+                    } catch (err) {
+                        console.error('设置主题选中状态时出错:', err);
+                    }
+                });
+            }
+            
+            // 设置时间点
+            if (window.appConfig.switchMode === 'time' && window.appConfig.switchTimes && window.appConfig.switchTimes.length > 0) {
+                console.log('设置时间点:', window.appConfig.switchTimes);
+                
+                // 清空现有的时间点
+                const container = document.getElementById('timePointsContainer');
+                if (container) {
+                    container.innerHTML = '';
+                    
+                    // 添加保存的时间点
+                    window.appConfig.switchTimes.forEach((time, index) => {
+                        const newEntry = document.createElement('div');
+                        newEntry.className = 'time-point-entry';
+                        newEntry.dataset.index = index.toString();
+                        
+                        const timeInput = document.createElement('input');
+                        timeInput.type = 'time';
+                        timeInput.step = '1';
+                        timeInput.className = 'time-input';
+                        timeInput.value = time;
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'delete-time-btn';
+                        deleteBtn.textContent = '删除';
+                        deleteBtn.onclick = function() { deleteTimePoint(this); };
+                        
+                        newEntry.appendChild(timeInput);
+                        newEntry.appendChild(deleteBtn);
+                        container.appendChild(newEntry);
+                    });
+                }
+            }
+        }
+
+        // 更新状态显示
+        function updateStatus(status, details) {
+            console.log('更新状态显示:', status, details);
+            
+            const statusElem = document.getElementById('statusTextContent');
+            const detailsElem = document.getElementById('statusDetailsContent');
+            const toggleBtn = document.getElementById('toggleBtn');
+            
+            let statusText = '未设置';
+            switch(status) {
+                case 'running':
+                    statusText = '运行中';
+                    break;
+                case 'paused':
+                    statusText = '已暂停';
+                    break;
+                case 'not_set':
+                    statusText = '未设置';
+                    break;
+                default:
+                    statusText = status || '未知';
+            }
+            
+            if (statusElem) {
+                console.log('设置状态文本:', statusText);
+                statusElem.textContent = statusText;
+            }
+            if (detailsElem) {
+                console.log('设置状态详情:', details);
+                detailsElem.textContent = details || '';
+            }
+            if (toggleBtn) {
+                console.log('设置切换按钮文本:', status === 'running' ? '暂停' : '启动');
+                toggleBtn.textContent = status === 'running' ? '暂停' : '启动';
+            }
+        }
+
+        // 更新主题选项
+        function updateThemeOptions(themes) {
+            console.log('更新主题选项, 收到', themes.length, '个主题');
+            
+            const defaultSelect = document.getElementById('defaultTheme');
+            const switchThemesContainer = document.getElementById('switchThemes');
+            
+            if (!defaultSelect || !switchThemesContainer) {
+                console.error('找不到主题元素');
+                return;
+            }
+            
+            // 记住当前选中的默认主题
+            const currentDefaultTheme = defaultSelect.value;
+            console.log('当前默认主题:', currentDefaultTheme);
+            
+            // 记录存在的所有主题ID，用于调试
+            const allThemeIds = themes.map(t => t.id);
+            console.log('所有可用主题ID:', allThemeIds);
+            
+            // 记录当前需要选中的主题
+            const themesToSelect = window.appConfig && window.appConfig.switchThemes ? 
+                window.appConfig.switchThemes : [];
+            console.log('需要选中的主题:', themesToSelect);
+            
+            // 清空选择器和列表
+            defaultSelect.innerHTML = '<option value="">请选择默认主题</option>';
+            switchThemesContainer.innerHTML = '';
+            
+            // 添加主题选项
+            themes.forEach(theme => {
+                try {
+                    // 添加到默认主题选择器
+                    const option = document.createElement('option');
+                    option.value = theme.id;
+                    option.textContent = theme.label;
+                    
+                    // 如果与配置中的默认主题相同，则选中
+                    if (window.appConfig && theme.id === window.appConfig.defaultTheme) {
+                        option.selected = true;
+                        console.log('选中默认主题:', theme.id);
+                    }
+                    
+                    defaultSelect.appendChild(option);
+                    
+                    // 添加到切换主题列表
+                    const themeItem = document.createElement('div');
+                    themeItem.className = 'theme-item';
+                    themeItem.setAttribute('data-theme-id', theme.id);
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = 'theme-' + Math.random().toString(36).substring(2, 10);
+                    checkbox.value = theme.id;
+                    
+                    // 如果在配置的切换主题列表中，则选中
+                    if (themesToSelect.includes(theme.id)) {
+                        checkbox.checked = true;
+                        console.log('选中切换主题:', theme.id);
+                    }
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = checkbox.id;
+                    
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'theme-label';
+                    labelSpan.textContent = theme.label;
+                    
+                    const descSpan = document.createElement('span');
+                    descSpan.className = 'theme-description';
+                    descSpan.textContent = theme.description || '';
+                    
+                    label.appendChild(labelSpan);
+                    label.appendChild(descSpan);
+                    
+                    themeItem.appendChild(checkbox);
+                    themeItem.appendChild(label);
+                    
+                    switchThemesContainer.appendChild(themeItem);
+                } catch (err) {
+                    console.error('处理主题时出错:', theme, err);
+                }
+            });
+            
+            showMessage(`已加载 ${themes.length} 个主题`);
+        }
+
+        // 监听来自VS Code的消息
+        window.addEventListener('message', event => {
+            const message = event.data;
+            console.log('收到VS Code的消息:', message);
+            
+            // 处理不同类型的消息
+            const command = message.command || message.type;
+            
+            switch (command) {
+                case 'themeList':
+                    if (message.themes) {
+                        updateThemeOptions(message.themes);
+                    }
+                    break;
+                    
+                case 'settingsSaved':
+                    showMessage('设置已保存' + (message.success ? '' : ' (失败)'));
+                    break;
+                    
+                case 'error':
+                    showMessage('错误: ' + message.message);
+                    break;
+                    
+                case 'statusUpdate':
+                    updateStatus(message.status, message.details);
+                    break;
+                    
+                default:
+                    console.log('收到未处理的消息类型:', command);
+            }
+        });
+
+        // 安全地执行初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面DOM加载完成');
+            
+            // 先绑定事件监听器
+            try {
+                // 绑定按钮事件
+                document.getElementById('saveBtn')?.addEventListener('click', handleSaveClick);
+                document.getElementById('testChannelBtn')?.addEventListener('click', testMessageChannel);
+                document.getElementById('testJsBtn')?.addEventListener('click', function() {
+                    showMessage('JavaScript工作正常');
+                });
+                document.getElementById('directSaveBtn')?.addEventListener('click', handleSaveClick);
+                document.getElementById('debugBtn')?.addEventListener('click', debugSaveProcess);
+                document.getElementById('toggleBtn')?.addEventListener('click', toggleStatus);
+                document.getElementById('switchMode')?.addEventListener('change', handleModeChange);
+                document.getElementById('addTimeBtn')?.addEventListener('click', addTimePoint);
+                
+                // 通知WebView已准备好
+                if (typeof vscode !== 'undefined') {
+                    try {
+                        vscode.postMessage({
+                            command: 'webviewReady',
+                            timestamp: new Date().toISOString()
+                        });
+                        console.log('已发送webviewReady消息');
+                    } catch (err) {
+                        console.error('发送webviewReady消息失败:', err);
+                        showMessage('发送webviewReady消息失败: ' + err.message);
+                    }
+                }
+                
+                console.log('所有事件监听器绑定成功');
+            } catch (err) {
+                console.error('绑定事件监听器时出错:', err);
+            }
+            
+            // 初始化模式显示
+            handleModeChange();
+            
+            // 先检查是否已有主题列表
+            const hasThemes = document.querySelectorAll('#switchThemes input[type="checkbox"]').length > 0;
+            console.log('当前有主题复选框:', hasThemes);
+            
+            if (hasThemes) {
+                console.log('主题已加载，初始化表单');
+                // 立即初始化
+                initializeFormValues();
+                // 延迟调试
+                setTimeout(debugSaveProcess, 1000);
+            } else {
+                // 等待主题加载
+                console.log('主题尚未加载，等待主题列表');
+                showMessage('正在加载主题，请稍候...');
+            }
+        });
+
+        // 如果文档已经加载完成，直接触发初始化
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            console.log('文档已加载，直接初始化');
+            // 通知扩展WebView已准备好接收数据
+            try {
+                vscode && vscode.postMessage({
+                    command: 'webviewReady',
+                    timestamp: new Date().toISOString()
+                });
+            } catch (e) {
+                console.error('发送webviewReady消息失败:', e);
+            }
+        }
+
+        // 跟踪表单变更
+        function trackChanges() {
+            console.log('表单内容已变更');
+            // 这个函数在新版本已经不需要了，保留为空函数以兼容旧HTML
+        }
+
+        // 初始配置占位符
+        // CONFIGURATION_PLACEHOLDER
+
+        // 等待VS Code API准备就绪
+        (function() {
+            const vscode = acquireVsCodeApi();
+            
+            // 获取注入的初始数据
+            const initialData = window.initialData || { config: {}, themes: [] };
+            console.log('初始数据:', initialData);
+
+            // 页面加载完成时的处理
+            document.addEventListener('DOMContentLoaded', () => {
+                // 通知扩展页面已加载
+                vscode.postMessage({ command: 'webviewReady' });
+            });
+
+            // 监听来自扩展的消息
+            window.addEventListener('message', event => {
+                const message = event.data;
+                switch (message.command) {
+                    case 'initializeConfig':
+                        loadSavedConfig(message.config);
+                        break;
+                }
+            });
+
+            function loadSavedConfig(config) {
+                if (!config) {
+                    console.warn('没有配置数据');
+                    return;
+                }
+
+                console.log('正在加载配置:', config);
+
+                try {
+                    // 设置默认主题
+                    const defaultThemeSelect = document.getElementById('defaultTheme');
+                    if (defaultThemeSelect && config.defaultTheme) {
+                        defaultThemeSelect.value = config.defaultTheme;
+                        console.log('设置默认主题:', config.defaultTheme);
+                    }
+
+                    // 设置切换主题列表
+                    const switchThemesSelect = document.getElementById('switchThemes');
+                    if (switchThemesSelect && config.switchThemes) {
+                        // 先清除所有选择
+                        Array.from(switchThemesSelect.options).forEach(option => {
+                            option.selected = false;
+                        });
+                        // 设置保存的选择
+                        config.switchThemes.forEach(theme => {
+                            Array.from(switchThemesSelect.options).forEach(option => {
+                                if (option.value === theme) {
+                                    option.selected = true;
+                                    console.log('选中主题:', theme);
+                                }
+                            });
+                        });
+                    }
+
+                    // 设置切换模式
+                    const switchModeSelect = document.getElementById('switchMode');
+                    if (switchModeSelect && config.switchMode) {
+                        switchModeSelect.value = config.switchMode;
+                        switchModeSelect.dispatchEvent(new Event('change'));
+                        console.log('设置切换模式:', config.switchMode);
+                    }
+
+                    // 设置切换间隔
+                    const switchIntervalInput = document.getElementById('switchInterval');
+                    if (switchIntervalInput && config.switchInterval) {
+                        switchIntervalInput.value = config.switchInterval;
+                        console.log('设置切换间隔:', config.switchInterval);
+                    }
+
+                    // 设置时间点列表
+                    const switchTimesList = document.getElementById('switchTimes');
+                    if (switchTimesList && config.switchTimes) {
+                        // 清空现有列表
+                        switchTimesList.innerHTML = '';
+                        // 添加保存的时间点
+                        config.switchTimes.forEach(time => {
+                            addTimeToList(time);
+                            console.log('添加时间点:', time);
+                        });
+                    }
+
+                    // 更新状态显示
+                    updateStatus(config.status);
+                    console.log('更新状态:', config.status);
+
+                } catch (error) {
+                    console.error('加载配置时出错:', error);
+                }
+            }
+
+            // 添加时间点到列表
+            function addTimeToList(time) {
+                const li = document.createElement('li');
+                li.textContent = time;
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '删除';
+                deleteBtn.onclick = () => li.remove();
+                li.appendChild(deleteBtn);
+                document.getElementById('switchTimes').appendChild(li);
+            }
+
+            // 更新状态显示
+            function updateStatus(status) {
+                const statusText = document.getElementById('statusTextContent');
+                const statusDetails = document.getElementById('statusDetailsContent');
+                if (statusText && statusDetails) {
+                    statusText.textContent = getStatusText(status);
+                    statusDetails.textContent = getStatusDetails(status);
+                }
+            }
+        }());
+    </script>
+</body>
+</html>

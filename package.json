@@ -1,0 +1,103 @@
+{
+  "name": "alfred-changing",
+  "displayName": "Alfred Changing",
+  "description": "A Theme changer plugin",
+  "version": "0.0.1",
+  "publisher": "zhao",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other",
+    "Themes"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:alfred-changing.updateConfig"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "alfred-changing.openSettings",
+        "title": "Alfred Changing: Open Theme Settings",
+        "category": "Alfred Changing"
+      },
+      {
+        "command": "alfred-changing.toggleStatus",
+        "title": "Alfred Changing: Toggle Theme Switching (Pause/Resume)",
+        "category": "Alfred Changing"
+      }
+    ],
+    "configuration": {
+      "title": "Alfred Changing",
+      "properties": {
+        "alfredChanging.defaultTheme": {
+          "type": "string",
+          "default": "",
+          "description": "默认主题"
+        },
+        "alfredChanging.switchThemes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "切换主题列表"
+        },
+        "alfredChanging.switchInterval": {
+          "type": "number",
+          "default": 30,
+          "description": "切换间隔（分钟）"
+        },
+        "alfredChanging.switchTimes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["12:00:00"],
+          "description": "切换时间点列表"
+        },
+        "alfredChanging.switchMode": {
+          "type": "string",
+          "enum": ["interval", "time"],
+          "default": "interval",
+          "description": "切换模式"
+        },
+        "alfredChanging.status": {
+          "type": "string",
+          "enum": ["running", "paused", "not_set"],
+          "default": "not_set",
+          "description": "当前状态"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "test:watch": "npm run compile && node ./out/test/runTest.js --watch",
+    "lint:fix": "eslint src --ext ts --fix"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^16.x.x",
+    "@types/sinon": "^17.0.3",
+    "@types/vscode": "^1.60.0",
+    "@typescript-eslint/eslint-plugin": "^7.1.1",
+    "@typescript-eslint/parser": "^7.1.1",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^8.57.0",
+    "glob": "^7.2.0",
+    "mocha": "^10.3.0",
+    "sinon": "^17.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "5.3.3",
+    "vscode-test": "^1.6.1"
+  }
+}

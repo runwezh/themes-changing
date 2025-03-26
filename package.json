@@ -1,6 +1,6 @@
 {
-  "name": "alfred-changing",
-  "displayName": "Alfred Changing",
+  "name": "themes-changing",
+  "displayName": "Themes Changing",
   "description": "A Theme changer plugin",
   "version": "0.0.1",
   "publisher": "zhao",
@@ -13,31 +13,31 @@
   ],
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:alfred-changing.updateConfig"
+    "onCommand:themes-changing.updateConfig"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "alfred-changing.openSettings",
-        "title": "Alfred Changing: Open Theme Settings",
-        "category": "Alfred Changing"
+        "command": "themes-changing.openSettings",
+        "title": "Themes Changing: Open Theme Settings",
+        "category": "Themes Changing"
       },
       {
-        "command": "alfred-changing.toggleStatus",
-        "title": "Alfred Changing: Toggle Theme Switching (Pause/Resume)",
-        "category": "Alfred Changing"
+        "command": "themes-changing.toggleStatus",
+        "title": "Themes Changing: Toggle Theme Switching (Pause/Resume)",
+        "category": "Themes Changing"
       }
     ],
     "configuration": {
-      "title": "Alfred Changing",
+      "title": "Themes Changing",
       "properties": {
-        "alfredChanging.defaultTheme": {
+        "themesChanging.defaultTheme": {
           "type": "string",
           "default": "",
           "description": "默认主题"
         },
-        "alfredChanging.switchThemes": {
+        "themesChanging.switchThemes": {
           "type": "array",
           "items": {
             "type": "string"
@@ -45,12 +45,12 @@
           "default": [],
           "description": "切换主题列表"
         },
-        "alfredChanging.switchInterval": {
+        "themesChanging.switchInterval": {
           "type": "number",
           "default": 30,
           "description": "切换间隔（分钟）"
         },
-        "alfredChanging.switchTimes": {
+        "themesChanging.switchTimes": {
           "type": "array",
           "items": {
             "type": "string"
@@ -58,13 +58,13 @@
           "default": ["12:00:00"],
           "description": "切换时间点列表"
         },
-        "alfredChanging.switchMode": {
+        "themesChanging.switchMode": {
           "type": "string",
           "enum": ["interval", "time"],
           "default": "interval",
           "description": "切换模式"
         },
-        "alfredChanging.status": {
+        "themesChanging.status": {
           "type": "string",
           "enum": ["running", "paused", "not_set"],
           "default": "not_set",

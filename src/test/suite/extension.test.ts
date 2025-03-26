@@ -3,11 +3,11 @@ import * as vscode from 'vscode';
 import { SwitchStatus } from '../../types';
 
 suite('Extension Test Suite', () => {
-    vscode.window.showInformationMessage('Starting tests for Alfred Changing plugin.');
+    vscode.window.showInformationMessage('Starting tests for Themes Changing plugin.');
 
     // Helper function: Wait for configuration update
     async function waitForConfigUpdate(key: string, expectedValue: string | string[] | number, timeout = 1000): Promise<boolean> {
-        const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('themesChanging');
         const startTime = Date.now();
         while (Date.now() - startTime < timeout) {
             const currentValue = config.get(key);
@@ -21,7 +21,7 @@ suite('Extension Test Suite', () => {
 
     test('Theme switching configuration test', async function() {
         // this.timeout(60000);
-        const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('themesChanging');
         const originalConfig = {
             defaultTheme: config.get('defaultTheme'),
             switchThemes: config.get('switchThemes'),
@@ -69,7 +69,7 @@ suite('Extension Test Suite', () => {
 
     test('Configuration validation test', async function() {
         // this.timeout(600000);
-        const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('themesChanging');
 
         // Test time interval range
         const interval = config.get('switchInterval') as number;
@@ -93,7 +93,7 @@ suite('Extension Test Suite', () => {
 
     test('Toggle status functionality test', async function() {
         // this.timeout(600000);
-        const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('themesChanging');
         
         // Store original status
         const originalStatus = config.get('status') as SwitchStatus || SwitchStatus.NotSet;

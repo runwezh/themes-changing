@@ -24,7 +24,7 @@ export class ThemeSwitcher {
     }
 
     private loadConfig(): ThemeConfig {
-        const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('themesChanging');
         const defaultTheme = config.get<string>('defaultTheme') || '';
         const switchThemes = config.get<string[]>('switchThemes') || [];
         const switchInterval = config.get<number>('switchInterval') || 30;
@@ -175,7 +175,7 @@ export class ThemeSwitcher {
         vscode.window.showErrorMessage(`Theme "${theme}" switching failed, please reconfigure`, 'Open Settings')
             .then(selection => {
                 if (selection === 'Open Settings') {
-                    vscode.commands.executeCommand('alfred-changing.openSettings');
+                    vscode.commands.executeCommand('themes-changing.openSettings');
                 }
             });
     }
@@ -188,7 +188,7 @@ export class ThemeSwitcher {
         this.config = { ...this.config, ...newConfig };
         
         // Save the configuration to workspace settings
-        const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('themesChanging');
         
         // Update each property if it has changed
         if (newConfig.defaultTheme !== undefined) {
@@ -235,7 +235,7 @@ export class ThemeSwitcher {
             SwitchStatus.Paused : SwitchStatus.Running;
             
         // Update configuration
-        vscode.workspace.getConfiguration('alfredChanging').update('status', newStatus, true)
+        vscode.workspace.getConfiguration('themesChanging').update('status', newStatus, true)
             .then(() => {
                 this.config.status = newStatus;
                 
@@ -275,20 +275,20 @@ export function activate(context: vscode.ExtensionContext) {
     const themeSwitcher = new ThemeSwitcher(context);
     
     context.subscriptions.push(
-        vscode.commands.registerCommand('alfred-changing.toggleStatus', () => {
+        vscode.commands.registerCommand('themes-changing.toggleStatus', () => {
             themeSwitcher.toggleStatus();
         }),
         
-        vscode.commands.registerCommand('alfred-changing.openSettings', () => {
+        vscode.commands.registerCommand('themes-changing.openSettings', () => {
             SettingsPanel.createOrShow(context.extensionUri);
         }),
         
-        vscode.commands.registerCommand('alfred-changing.updateConfig', (newConfig: Partial<ThemeConfig>) => {
+        vscode.commands.registerCommand('themes-changing.updateConfig', (newConfig: Partial<ThemeConfig>) => {
             themeSwitcher.updateConfig(newConfig);
         }),
         
-        vscode.commands.registerCommand('alfred-changing.applyDefaultTheme', async () => {
-            const config = vscode.workspace.getConfiguration('alfredChanging');
+        vscode.commands.registerCommand('themes-changing.applyDefaultTheme', async () => {
+            const config = vscode.workspace.getConfiguration('themesChanging');
             const defaultTheme = config.get('defaultTheme') as string;
             
             if (defaultTheme) {

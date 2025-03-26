@@ -1,4 +1,4 @@
-# Alfred Changing
+# Themes Changing
 
 A smart VS Code/Cursor theme switching plugin, supporting scheduled and interval-based theme switches.
 
@@ -84,12 +84,12 @@ A smart VS Code/Cursor theme switching plugin, supporting scheduled and interval
 
 1. **Open Settings Interface**
    - Use the command palette (Cmd+Shift+P or Ctrl+Shift+P)
-   - Type "Alfred Changing: Open Theme Settings"
+   - Type "Themes Changing: Open Theme Settings"
    - Or click the button in the activation notification
 
    **打开设置界面**
    - 使用命令面板（Cmd+Shift+P 或 Ctrl+Shift+P）
-   - 输入 "Alfred Changing: Open Theme Settings"
+   - 输入 "Themes Changing: Open Theme Settings"
    - 或在插件激活提示中点击按钮
 
 2. **Configure Themes**
@@ -295,7 +295,7 @@ This project is licensed under the [MIT License](LICENSE).
 ```
 MIT License
 
-Copyright (c) 2025 Alfred Changing Project Contributors
+Copyright (c) 2025 Themes Changing Project Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

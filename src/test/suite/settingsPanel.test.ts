@@ -7,7 +7,7 @@ suite('Settings Panel Test', () => {
         // this.timeout(60000); // 1分钟超时
         
         // Create settings panel
-        await vscode.commands.executeCommand('alfred-changing.openSettings');
+        await vscode.commands.executeCommand('themes-changing.openSettings');
         
         // Wait for settings panel to display
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -24,13 +24,13 @@ suite('Settings Panel Test', () => {
     test('Test settings saving', async function() {
         this.timeout(60000); // 1分钟超时
 
-        const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('themesChanging');
         const testInterval = 15;
         const testTimes = ['12:00:00', '18:00:00'];
 
         try {
             // Open settings panel
-            await vscode.commands.executeCommand('alfred-changing.openSettings');
+            await vscode.commands.executeCommand('themes-changing.openSettings');
             await new Promise(resolve => setTimeout(resolve, 500));
 
             // Update settings
@@ -42,7 +42,7 @@ suite('Settings Panel Test', () => {
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Get updated configuration
-            const updatedConfig = vscode.workspace.getConfiguration('alfredChanging');
+            const updatedConfig = vscode.workspace.getConfiguration('themesChanging');
 
             // Verify settings were saved correctly
             assert.strictEqual(updatedConfig.get('switchInterval'), testInterval, 'Switch interval setting is incorrect');
@@ -67,7 +67,7 @@ suite('Settings Panel Test', () => {
 
         try {
             // Open settings panel
-            await vscode.commands.executeCommand('alfred-changing.openSettings');
+            await vscode.commands.executeCommand('themes-changing.openSettings');
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             // Get current theme
@@ -87,7 +87,7 @@ suite('Settings Panel Test', () => {
         const initialTheme = await vscode.workspace.getConfiguration('workbench').get('colorTheme');
         
         // 创建并显示设置面板
-        await vscode.commands.executeCommand('alfred-changing.openSettings');
+        await vscode.commands.executeCommand('themes-changing.openSettings');
         const panel = SettingsPanel.currentPanel;
         assert.ok(panel, '设置面板应该被创建');
         
@@ -147,7 +147,7 @@ suite('Settings Panel Test', () => {
         };
         
         // 发送保存设置消息
-        await vscode.commands.executeCommand('alfred-changing.updateConfig', message);
+        await vscode.commands.executeCommand('themes-changing.updateConfig', message);
         
         // 等待设置保存和主题切换
         await new Promise(resolve => setTimeout(resolve, 2000));

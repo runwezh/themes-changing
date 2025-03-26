@@ -22,7 +22,7 @@ interface ThemeInfo {
 }
 
 export class SettingsPanel {
-    private static readonly viewType = 'alfredChanging.settingsPanel';
+    private static readonly viewType = 'themesChanging.settingsPanel';
     public static currentPanel: SettingsPanel | undefined;
     private readonly _panel: vscode.WebviewPanel;
     private readonly _extensionUri: vscode.Uri;
@@ -75,7 +75,7 @@ export class SettingsPanel {
     }
 
     private async _loadSavedConfig() {
-        const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('themesChanging');
         const workbenchConfig = vscode.workspace.getConfiguration('workbench');
         const currentTheme = workbenchConfig.get('colorTheme') as string;
                     
@@ -315,7 +315,7 @@ export class SettingsPanel {
                             case 'toggleStatus':
                         // 切换状态
                         try {
-                            await vscode.commands.executeCommand('alfred-changing.toggleStatus');
+                            await vscode.commands.executeCommand('themes-changing.toggleStatus');
                         } catch (error) {
                             vscode.window.showErrorMessage(`切换状态时出错: ${error}`);
                         }
@@ -369,7 +369,7 @@ export class SettingsPanel {
         status: string;
     }) {
         try {
-        const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('themesChanging');
             
             // 验证配置数据
             if (!message || typeof message !== 'object') {

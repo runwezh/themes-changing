@@ -78,8 +78,8 @@ export class SettingsPanel {
         const config = vscode.workspace.getConfiguration('alfredChanging');
         const workbenchConfig = vscode.workspace.getConfiguration('workbench');
         const currentTheme = workbenchConfig.get('colorTheme') as string;
-
-        return {
+                    
+                    return {
             defaultTheme: config.get('defaultTheme') || currentTheme,
             switchThemes: config.get('switchThemes') || [],
             switchInterval: config.get('switchInterval') || 30,
@@ -183,14 +183,14 @@ export class SettingsPanel {
                     const displayLabel = this._getDisplayLabel(theme.label, extension.id);
                     
                     themes.push({
-                        id: themeId,
+                                        id: themeId,
                         label: displayLabel,
                         description: theme.description,
                         extension: extension.id,
                         originalLabel: originalLabel
-                    });
-                }
-            }
+                                    });
+                                }
+                            }
             
             // 去重并排序
             const uniqueThemes = this._removeDuplicateThemes(themes);
@@ -288,31 +288,31 @@ export class SettingsPanel {
                     case 'ready':
                         // WebView准备就绪
                         break;
-                    case 'getThemes':
+                            case 'getThemes':
                         // WebView请求获取主题列表
                         try {
                             const themes = await this._getAllThemes();
-                            webview.postMessage({ 
-                                type: 'themeList', 
-                                themes 
-                            });
-                        } catch (error) {
+                                            webview.postMessage({ 
+                                                type: 'themeList', 
+                                                themes 
+                                            });
+                                } catch (error) {
                             vscode.window.showErrorMessage(`获取主题列表失败: ${error}`);
-                        }
-                        break;
-                    case 'saveSettings':
+                                }
+                                break;
+                            case 'saveSettings':
                         // 保存设置
                         try {
                             if (message.settings) {
                                 await this._handleSaveSettings(message.settings);
-                            } else {
+                                } else {
                                 vscode.window.showErrorMessage('保存设置失败：未提供有效的设置数据');
                             }
                         } catch (error) {
                             vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
-                        }
-                        break;
-                    case 'toggleStatus':
+                                }
+                                break;
+                            case 'toggleStatus':
                         // 切换状态
                         try {
                             await vscode.commands.executeCommand('alfred-changing.toggleStatus');
@@ -322,34 +322,34 @@ export class SettingsPanel {
                         break;
                     case 'debug':
                         // 调试消息，仅在开发时使用
-                        break;
-                    default:
+                                break;
+                            default:
                         // 未知命令
                         break;
                 }
             },
             null,
-            this._disposables
-        );
+                this._disposables
+            );
     }
 
     // 修改 _sendDefaultThemes 方法，添加保存的配置参数
     private async _sendDefaultThemes(webview: vscode.Webview, savedConfig?: any) {
         try {
-            // 默认主题列表
-            const defaultThemes = [
-                { id: 'Default Dark+', label: 'Default Dark+', description: 'VS Code Built-in Theme' },
-                { id: 'Default Light+', label: 'Default Light+', description: 'VS Code Built-in Theme' },
-                { id: 'Visual Studio Dark', label: 'Visual Studio Dark', description: 'VS Code Built-in Theme' },
-                { id: 'Visual Studio Light', label: 'Visual Studio Light', description: 'VS Code Built-in Theme' },
-                { id: 'High Contrast', label: 'High Contrast', description: 'VS Code Built-in Theme' },
-                { id: 'Monokai', label: 'Monokai', description: 'VS Code Built-in Theme' },
-                { id: 'Solarized Dark', label: 'Solarized Dark', description: 'VS Code Built-in Theme' },
-                { id: 'Solarized Light', label: 'Solarized Light', description: 'VS Code Built-in Theme' },
-            ];
-            
+        // 默认主题列表
+        const defaultThemes = [
+            { id: 'Default Dark+', label: 'Default Dark+', description: 'VS Code Built-in Theme' },
+            { id: 'Default Light+', label: 'Default Light+', description: 'VS Code Built-in Theme' },
+            { id: 'Visual Studio Dark', label: 'Visual Studio Dark', description: 'VS Code Built-in Theme' },
+            { id: 'Visual Studio Light', label: 'Visual Studio Light', description: 'VS Code Built-in Theme' },
+            { id: 'High Contrast', label: 'High Contrast', description: 'VS Code Built-in Theme' },
+            { id: 'Monokai', label: 'Monokai', description: 'VS Code Built-in Theme' },
+            { id: 'Solarized Dark', label: 'Solarized Dark', description: 'VS Code Built-in Theme' },
+            { id: 'Solarized Light', label: 'Solarized Light', description: 'VS Code Built-in Theme' },
+        ];
+        
             // 发送主题列表到WebView
-            webview.postMessage({
+            webview.postMessage({ 
                 type: 'themeList', 
                 themes: defaultThemes,
                 savedConfig: savedConfig || this._loadSavedConfig()
@@ -369,7 +369,7 @@ export class SettingsPanel {
         status: string;
     }) {
         try {
-            const config = vscode.workspace.getConfiguration('alfredChanging');
+        const config = vscode.workspace.getConfiguration('alfredChanging');
             
             // 验证配置数据
             if (!message || typeof message !== 'object') {

@@ -3,7 +3,7 @@
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>主题切换设置</title>
+    <title>Theme Switch Settings</title>
             <style>
                 body { 
                     padding: 20px; 
@@ -98,35 +98,35 @@
     
     <div id="settings-container" style="display: none;">
         <div class="section">
-            <div class="section-title">默认主题</div>
+            <div class="section-title">Default Theme</div>
             <select id="default-theme"></select>
             </div>
             
         <div class="section">
-            <div class="section-title">待选择主题列表</div>
+            <div class="section-title">Theme Switch List</div>
             <div class="theme-list" id="theme-list"></div>
             </div>
 
         <div class="section">
-            <div class="section-title">切换模式</div>
+            <div class="section-title">Switch Mode</div>
             <select id="switch-mode">
-                <option value="interval">按时间间隔</option>
-                <option value="time">按特定时间点</option>
+                <option value="interval">By Time Interval</option>
+                <option value="time">By Specific Time</option>
                 </select>
             </div>
 
         <div class="section" id="interval-section">
-            <div class="section-title">时间间隔 (分钟)</div>
+            <div class="section-title">Time Interval (minutes)</div>
             <input type="number" id="switch-interval" min="1" max="60" value="10">
             </div>
 
         <div class="section" id="times-section" style="display: none;">
-            <div class="section-title">切换时间点 (24小时制)</div>
+            <div class="section-title">Switch Time Points (24-hour format)</div>
             <div class="time-inputs" id="time-inputs">
                 <div class="time-input">
                     <input type="time" class="switch-time">
                 </div>
-                <button id="add-time">添加时间点</button>
+                <button id="add-time">Add Time Point</button>
             </div>
             </div>
             
@@ -134,11 +134,11 @@
             <div id="status-indicator" class="status-indicator status-not-set"></div>
             <div id="status-text">当前状态: 未设置</div>
             <div style="flex-grow: 1;"></div>
-            <button id="toggle-status" disabled>启动</button>
+            <button id="toggle-status" disabled>Start</button>
                 </div>
         
         <div class="section" style="margin-top: 20px;">
-            <button id="save-settings">保存设置</button>
+            <button id="save-settings">Save Settings</button>
                 </div>
             </div>
             
@@ -195,6 +195,9 @@
                 // 切换状态
                 document.getElementById('toggle-status').addEventListener('click', function() {
                     toggleStatus();
+                    currentStatus = currentStatus === 'running' ? 'paused' : 'running';
+                    //更新显示状态
+                    updateStatusDisplay(currentStatus);
                 });
             }
             
@@ -299,20 +302,20 @@
                 switch(status) {
                     case 'running':
                         indicator.classList.add('status-running');
-                        text.textContent = '当前状态: 运行中';
-                        button.textContent = '暂停';
+                        text.textContent = 'Current Status: Running';
+                        button.textContent = 'Pause';
                         button.disabled = false;
                         break;
                     case 'paused':
                         indicator.classList.add('status-paused');
-                        text.textContent = '当前状态: 已暂停';
-                        button.textContent = '启动';
+                        text.textContent = 'Current Status: Paused';
+                        button.textContent = 'Start';
                         button.disabled = false;
                         break;
                     default:
                         indicator.classList.add('status-not-set');
-                        text.textContent = '当前状态: 未设置';
-                        button.textContent = '启动';
+                        text.textContent = 'Current Status: Not Set';
+                        button.textContent = 'Start';
                         button.disabled = true;
                 }
             }
@@ -389,7 +392,7 @@
                     vscode.postMessage({
                         command: 'showMessage',
                         type: 'warning',
-                        message: '待选择主题列表里，请至少选择一个主题'
+                        message: 'Please select at least one theme in the theme list'
                     });
                     return;
                 }
@@ -414,7 +417,7 @@
                     vscode.postMessage({
                         command: 'showMessage',
                         type: 'warning',
-                        message: '按时间点切换主题，请至少设置一个时间点'
+                        message: 'Please set at least one time point for time-based theme switching'
                     });
                     return;
                 }

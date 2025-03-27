@@ -70,7 +70,7 @@ export class SettingsPanel {
             const webview = this._panel.webview;
             webview.html = await this._getWebviewContent(config);
         } catch (error) {
-            vscode.window.showErrorMessage(`更新面板时出错: ${error}`);
+            vscode.window.showErrorMessage(`Error updating panel: ${error}`);
         }
     }
 
@@ -196,7 +196,7 @@ export class SettingsPanel {
             const uniqueThemes = this._removeDuplicateThemes(themes);
             return uniqueThemes;
         } catch (error) {
-            vscode.window.showErrorMessage(`获取主题列表失败: ${error}`);
+            vscode.window.showErrorMessage(`Failed to get theme list: ${error}`);
             return [];
         }
     }
@@ -293,7 +293,7 @@ export class SettingsPanel {
                                 themes 
                             });
                         } catch (error) {
-                            vscode.window.showErrorMessage(`获取主题列表失败: ${error}`);
+                            vscode.window.showErrorMessage(`Failed to get theme list: ${error}`);
                         }
                         break;
                     case 'saveSettings':
@@ -318,10 +318,10 @@ export class SettingsPanel {
                                     status
                                 });
                             } else {
-                                vscode.window.showErrorMessage('保存设置失败：未提供有效的设置数据');
+                                vscode.window.showErrorMessage('Failed to save settings: No valid settings data provided');
                             }
                         } catch (error) {
-                            vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
+                            vscode.window.showErrorMessage(`Error while saving configuration: ${error}`);
                         }
                         break;
                     case 'toggleStatus':
@@ -329,7 +329,7 @@ export class SettingsPanel {
                         try {
                             await vscode.commands.executeCommand('themes-changing.toggleStatus');
                         } catch (error) {
-                            vscode.window.showErrorMessage(`切换状态时出错: ${error}`);
+                            vscode.window.showErrorMessage(`Error while toggling status: ${error}`);
                         }
                         break;
                     case 'showMessage':
@@ -358,23 +358,23 @@ export class SettingsPanel {
     // 修改 _validateSettings 方法
     private _validateSettings(config: ConfigData): string | null {
         if (!config.defaultTheme || config.defaultTheme.trim() === '') {
-            return '默认主题不能为空！';
+            return 'Default theme cannot be empty!';
         }
         if (!Array.isArray(config.switchThemes)) {
-            return '切换主题列表无效！';
+            return 'Theme switch list is invalid!';
         }
         // 需要知道当前配置是哪种切换模式，按时间间隔还是按时间点
         if (config.switchMode === SwitchMode.Time && config.switchTimes.length === 0) {
-            return '切换时间列表不能为空！请至少设置一个切换时间！';
+            return 'Switch time list cannot be empty! Please set at least one switch time!';
         }
         if (config.switchMode === SwitchMode.Interval && config.switchInterval <= 0) {
-            return '切换间隔时间必须大于0！';
+            return 'Switch interval must be greater than 0!';
         }
         if (![SwitchMode.Interval, SwitchMode.Time].includes(config.switchMode)) {
-            return '切换模式无效，只能为 "interval" 或 "time"！';
+            return 'Switch mode is invalid, must be "interval" or "time"!';
         }
         if (![SwitchStatus.NotSet, SwitchStatus.Running, SwitchStatus.Paused].includes(config.status)) {
-            return '状态无效！';
+            return 'Status is invalid!';
         }
         return null;
     }
@@ -382,15 +382,14 @@ export class SettingsPanel {
     // 修改 _handleSaveSettings 方法
     private async _handleSaveSettings(config: ConfigData) {
         try {
-            // 进行数据校验，返回错误提示信息或 null
+            // 数据校验
             const validationError = this._validateSettings(config);
             if (validationError) {
-                vscode.window.showWarningMessage(`设置校验错误：${validationError}`);
+                vscode.window.showWarningMessage(`Settings validation error: ${validationError}`);
                 return;
             }
 
             const vsCodeConfig = vscode.workspace.getConfiguration('themesChanging');
-            // 如果状态是not_set，则设置为running,并且让定时器开始跑起来
             if (config.status === SwitchStatus.NotSet) {
                 config.status = SwitchStatus.Running;
             }
@@ -430,22 +429,22 @@ export class SettingsPanel {
                     // 确保定时器当前状态为running
                     this._themeSwitcher.setStatus(config.status);
                     // 发送当前状态到WebView
-                    this._panel.webview.postMessage({ type: 'timerStatus', status: config.status });
+                    this._panel.webview.postMessage({ type: '', status: config.status });
             
-                    vscode.window.showInformationMessage('主题切换定时器已更新并已启动！');
+                    vscode.window.showInformationMessage('Theme switching timer has been updated and started!');
                 } else if (config.status === SwitchStatus.Paused) {
                     // 确保定时器已停止
                     await this._themeSwitcher.stopScheduler();
-                    vscode.window.showInformationMessage('主题切换已暂停！');
+                    vscode.window.showInformationMessage('Theme switching has been paused!');
                 }
             } else {
-                vscode.window.showWarningMessage('无法访问主题切换器，请重启 VS Code 以应用更改。');
+                vscode.window.showWarningMessage('Unable to access theme switcher, please restart VS Code to apply changes.');
             }
             
-            vscode.window.showInformationMessage('设置已成功保存！');
+            vscode.window.showInformationMessage('Settings have been saved successfully!');
             
         } catch (error) {
-            vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
+            vscode.window.showErrorMessage(`Error saving configuration: ${error}`);
         }
     }
 
@@ -471,82 +470,11 @@ export class SettingsPanel {
                 savedConfig: savedConfig || this._loadSavedConfig()
             });
         } catch (error) {
-            vscode.window.showErrorMessage(`发送默认主题列表时出错: ${error}`);
+            vscode.window.showErrorMessage(`Error sending default theme list: ${error}`);
         }
     }
 
-    // 新增方法：校验设置数据，格式正确返回 null，否则返回错误提示信息
-    // private _validateSettings(message: {
-    //     defaultTheme: string;
-    //     switchThemes: string[];
-    //     switchInterval: number;
-    //     switchTimes: string[];
-    //     switchMode: string;
-    //     status: string;
-    // }): string | null {
-    //     if (!message.defaultTheme || message.defaultTheme.trim() === '') {
-    //         return '默认主题不能为空！';
-    //     }
-    //     if (!Array.isArray(message.switchThemes)) {
-    //         return '切换主题列表无效！';
-    //     }
-    //     // 需要知道当前配置是哪种切换模式，按时间间隔还是按时间点，如果按时间间隔则校验间隔时间数值必须大于0，如果按时间点则必须要有至少1个时间点
-    //     if (message.switchMode === 'time' && message.switchTimes.length === 0) {
-    //         return '切换时间列表不能为空！请至少设置一个切换时间！';
-    //     }
-    //     if (message.switchMode === 'interval' && message.switchInterval <= 0) {
-    //         return '切换间隔时间必须大于0！';
-    //     }
-    //     if (!['interval', 'time'].includes(message.switchMode)) {
-    //         return '切换模式无效，只能为 "interval" 或 "time"！';
-    //     }
-    //     if (!message.status || !['not_set', 'Running', 'Paused'].includes(message.status)) {
-    //         return '状态无效！';
-    //     }
-    //     return null;
-    // }
-    
-    // 修改 _handleSaveSettings 方法，增加数据校验并给出友好提示
-    // private async _handleSaveSettings(message: {
-    //     defaultTheme: string;
-    //     switchThemes: string[];
-    //     switchInterval: number;
-    //     switchTimes: string[];
-    //     switchMode: string;
-    //     status: string;
-    // }) {
-    //     try {
-    //         // 进行数据校验，返回错误提示信息或 null
-    //         const validationError = this._validateSettings(message);
-    //         if (validationError) {
-    //             vscode.window.showWarningMessage(`设置校验错误：${validationError}`);
-    //             return;
-    //         }
-    
-    //         const config = vscode.workspace.getConfiguration('themesChanging');
-            
-    //         // 保存每个配置项
-    //         const updates = [
-    //             config.update('defaultTheme', message.defaultTheme, vscode.ConfigurationTarget.Global),
-    //             config.update('switchThemes', message.switchThemes, vscode.ConfigurationTarget.Global),
-    //             config.update('switchInterval', message.switchInterval, vscode.ConfigurationTarget.Global),
-    //             config.update('switchTimes', message.switchTimes, vscode.ConfigurationTarget.Global),
-    //             config.update('switchMode', message.switchMode, vscode.ConfigurationTarget.Global),
-    //             config.update('status', message.status, vscode.ConfigurationTarget.Global)
-    //         ];
-    
-    //         // 等待所有配置更新完成
-    //         await Promise.all(updates);
-    //         // 如果默认主题已更改或者与当前主题不同 ，更新全局主题配置
-    //         const currentTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
-    //         if (message.defaultTheme !== config.get('defaultTheme') || currentTheme !== message.defaultTheme) {
-    //             await vscode.workspace.getConfiguration('workbench').update('colorTheme', message.defaultTheme, vscode.ConfigurationTarget.Global);
-    //         }
-    //         vscode.window.showInformationMessage('设置已成功保存！');
-    //     } catch (error) {
-    //         vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
-    //     }
-    // }
+   
 
     // 辅助方法获取切换时间
     private _getSwitchTimes(config: vscode.WorkspaceConfiguration): string[] {
@@ -595,12 +523,12 @@ export class SettingsPanel {
 </head>
 <body>
     <div class="error-message">
-        <h2>设置页面加载失败</h2>
-        <p>无法加载完整的设置页面。请检查以下问题：</p>
+        <h2>Settings Page Failed to Load</h2>
+        <p>Unable to load the complete settings page. Please check the following issues:</p>
         <ul>
-            <li>确保扩展正确安装</li>
-            <li>检查扩展ID是否正确</li>
-            <li>查看开发者工具中的控制台输出</li>
+            <li>Ensure the extension is installed correctly</li>
+            <li>Check if the extension ID is correct</li>
+            <li>View the console output in the developer tools</li>
         </ul>
     </div>
 </body>

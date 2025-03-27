@@ -321,15 +321,16 @@ export function activate(context: vscode.ExtensionContext) {
             themeSwitcher.updateConfig(newConfig);
         }),
         
+        // 修改 theme-changing.applyDefaultTheme 命令的消息提示
         vscode.commands.registerCommand('themes-changing.applyDefaultTheme', async () => {
             const config = vscode.workspace.getConfiguration('themesChanging');
             const defaultTheme = config.get('defaultTheme') as string;
             
             if (defaultTheme) {
                 await vscode.workspace.getConfiguration('workbench').update('colorTheme', defaultTheme, true);
-                vscode.window.showInformationMessage(`主题已切换为默认主题: ${defaultTheme}`);
+                vscode.window.showInformationMessage(`Theme switched to default: ${defaultTheme}`);
             } else {
-                vscode.window.showWarningMessage('未设置默认主题');
+                vscode.window.showWarningMessage('No default theme set');
             }
         })
     );

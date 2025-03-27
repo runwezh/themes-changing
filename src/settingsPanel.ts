@@ -429,7 +429,7 @@ export class SettingsPanel {
                     // 确保定时器当前状态为running
                     this._themeSwitcher.setStatus(config.status);
                     // 发送当前状态到WebView
-                    this._panel.webview.postMessage({ type: '', status: config.status });
+                    this._panel.webview.postMessage({ type: 'timerStatus', status: config.status });
             
                     vscode.window.showInformationMessage('Theme switching timer has been updated and started!');
                 } else if (config.status === SwitchStatus.Paused) {

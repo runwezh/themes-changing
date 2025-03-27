@@ -1,124 +1,257 @@
 <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Theme Switch Settings</title>
-            <style>
-                body { 
-                    padding: 20px; 
+    <style>
+        body { 
+            padding: 20px; 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             color: var(--vscode-foreground);
             background-color: var(--vscode-editor-background);
         }
+        
+        /* 基础样式 */
         .section {
-                    margin-bottom: 20px;
-                }
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: var(--vscode-sideBar-background, transparent);
+            border: 1px solid var(--vscode-panel-border, transparent);
+        }
+        
         .section-title {
-                    font-weight: bold;
+            font-weight: bold;
             margin-bottom: 10px;
-                }
-                select, input {
-                    width: 100%;
-            padding: 5px;
-                    margin-bottom: 10px;
+            color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 表单元素样式 */
+        select, input {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 12px;
             background-color: var(--vscode-input-background);
             color: var(--vscode-input-foreground);
             border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
         }
+        
+        select:focus, input:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            border-color: var(--vscode-focusBorder);
+        }
+        
+        /* 按钮样式 */
         button {
             padding: 8px 16px;
             background-color: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
             border: none;
+            border-radius: 2px;
             cursor: pointer;
             margin-right: 10px;
+            font-weight: 500;
         }
+        
+        button:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+        
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-                }
-                .theme-list {
-                    max-height: 200px;
-                    overflow-y: auto;
-            border: 1px solid var(--vscode-input-border);
-                    padding: 10px;
-            margin-bottom: 10px;
-                }
-                .theme-item {
-                    display: flex;
-                    align-items: center;
-                    margin-bottom: 5px;
-            text-align: left;
         }
+        
+        button.secondary {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+        
+        button.secondary:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground);
+        }
+        
+        /* 主题列表 */
+        .theme-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--vscode-input-border);
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: var(--vscode-input-background);
+            border-radius: 3px;
+        }
+        
+        .theme-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            text-align: left;
+            padding: 4px 0;
+        }
+        
+        .theme-item:hover {
+            background-color: var(--vscode-list-hoverBackground);
+        }
+        
         .theme-item input[type="checkbox"] {
             margin-right: 10px;
             width: auto;
+            accent-color: var(--vscode-checkbox-background);
         }
+        
+        /* 时间输入区域 */
         .time-inputs {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
         }
+        
         .time-input {
             flex: 1;
             min-width: 120px;
+            display: flex;
+            align-items: center;
         }
+        
+        .time-input button {
+            padding: 6px 8px;
+            background-color: var(--vscode-editorError-foreground);
+            margin-left: 5px;
+        }
+        
+        /* 状态区域 */
         .status-section {
-                    display: flex;
-                    align-items: center;
+            display: flex;
+            align-items: center;
             margin-top: 20px;
-            padding: 10px;
-            border: 1px solid var(--vscode-input-border);
-            background-color: var(--vscode-editor-background);
-                }
-                .status-indicator {
+            padding: 15px;
+            border: 1px solid var(--vscode-panel-border);
+            background-color: var(--vscode-sideBar-background, transparent);
+            border-radius: 5px;
+        }
+        
+        .status-indicator {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             margin-right: 10px;
-                }
-                .status-running {
-            background-color: green;
-                }
-                .status-paused {
-            background-color: orange;
+            border: 1px solid var(--vscode-panel-border);
         }
+        
+        .status-running {
+            background-color: var(--vscode-testing-runAction);
+        }
+        
+        .status-paused {
+            background-color: var(--vscode-editorWarning-foreground);
+        }
+        
         .status-not-set {
-            background-color: gray;
+            background-color: var(--vscode-disabledForeground);
         }
+        
+        /* 加载指示器 */
         .loading {
             text-align: center;
             padding: 20px;
-                }
-            </style>
-        </head>
-        <body>
-    <div id="loading" class="loading">加载中...</div>
+            color: var(--vscode-descriptionForeground);
+        }
+        
+        /* 添加滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--vscode-scrollbarSlider-background);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--vscode-scrollbarSlider-hoverBackground);
+            border-radius: 4px;
+        }
+        
+        /* 自定义通知系统 */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            max-width: 300px;
+            z-index: 1000;
+        }
+        
+        .notification {
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .notification.info {
+            background-color: var(--vscode-notificationsInfoBackground);
+            color: var(--vscode-notificationsInfoForeground);
+            border-left: 4px solid var(--vscode-notificationsInfoIcon-foreground);
+        }
+        
+        .notification.warning {
+            background-color: var(--vscode-notificationsWarningBackground);
+            color: var(--vscode-notificationsWarningForeground);
+            border-left: 4px solid var(--vscode-notificationsWarningIcon-foreground);
+        }
+        
+        .notification.error {
+            background-color: var(--vscode-notificationsErrorBackground);
+            color: var(--vscode-notificationsErrorForeground);
+            border-left: 4px solid var(--vscode-notificationsErrorIcon-foreground);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">loading...</div>
     
     <div id="settings-container" style="display: none;">
         <div class="section">
             <div class="section-title">Default Theme</div>
             <select id="default-theme"></select>
-            </div>
+        </div>
             
         <div class="section">
             <div class="section-title">Theme Switch List</div>
             <div class="theme-list" id="theme-list"></div>
-            </div>
+        </div>
 
         <div class="section">
             <div class="section-title">Switch Mode</div>
             <select id="switch-mode">
                 <option value="interval">By Time Interval</option>
                 <option value="time">By Specific Time</option>
-                </select>
-            </div>
+            </select>
+        </div>
 
         <div class="section" id="interval-section">
             <div class="section-title">Time Interval (minutes)</div>
             <input type="number" id="switch-interval" min="1" max="60" value="10">
-            </div>
+        </div>
 
         <div class="section" id="times-section" style="display: none;">
             <div class="section-title">Switch Time Points (24-hour format)</div>
@@ -128,23 +261,26 @@
                 </div>
                 <button id="add-time">Add Time Point</button>
             </div>
-            </div>
+        </div>
             
         <div class="status-section">
             <div id="status-indicator" class="status-indicator status-not-set"></div>
-            <div id="status-text">当前状态: 未设置</div>
+            <div id="status-text">current status: not_set</div>
             <div style="flex-grow: 1;"></div>
             <button id="toggle-status" disabled>Start</button>
-                </div>
+        </div>
         
         <div class="section" style="margin-top: 20px;">
             <button id="save-settings">Save Settings</button>
-                </div>
-            </div>
+        </div>
+    </div>
             
     <!-- 配置数据占位符 -->
     // CONFIGURATION_PLACEHOLDER
     
+    <!-- 在 body 标签内的最后添加通知容器 -->
+    <div id="notification-container" class="notification-container"></div>
+
     <script>
         (function() {
             const vscode = acquireVsCodeApi();
@@ -264,8 +400,8 @@
                 // 限制最多5个时间点
                 const timeInputs = document.querySelectorAll('.switch-time');
                 if (timeInputs.length >= 5) {
-                        return;
-                    }
+                    return;
+                }
                     
                 const div = document.createElement('div');
                 div.className = 'time-input';
@@ -278,7 +414,7 @@
                 }
                 
                 const removeButton = document.createElement('button');
-                removeButton.textContent = '删除';
+                removeButton.textContent = 'del';
                 removeButton.addEventListener('click', function() {
                     div.remove();
                 });
@@ -327,8 +463,8 @@
                 defaultThemeSelect.innerHTML = '';
                 
                 themes.forEach(theme => {
-                            const option = document.createElement('option');
-                            option.value = theme.id;
+                    const option = document.createElement('option');
+                    option.value = theme.id;
                     option.textContent = theme.label;
                     defaultThemeSelect.appendChild(option);
                     
@@ -348,12 +484,12 @@
                         return;
                     }
                     
-                            const div = document.createElement('div');
-                            div.className = 'theme-item';
-                            
-                            const checkbox = document.createElement('input');
-                            checkbox.type = 'checkbox';
-                            checkbox.value = theme.id;
+                    const div = document.createElement('div');
+                    div.className = 'theme-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = theme.id;
                     checkbox.id = `theme-${theme.id}`;
                     
                     // 如果在选中列表中，勾选它
@@ -373,6 +509,26 @@
                 // 显示设置容器，隐藏加载提示
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('settings-container').style.display = 'block';
+            }
+            
+            // 自定义通知系统
+            function showNotification(message, type = 'info', duration = 3000) {
+                const container = document.getElementById('notification-container');
+                
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                
+                container.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'fadeOut 0.3s ease-in forwards';
+                    setTimeout(() => {
+                        container.removeChild(notification);
+                    }, 300);
+                }, duration);
+                
+                return notification;
             }
             
             // 保存设置
@@ -398,8 +554,8 @@
                 }
                 
                 // 获取切换模式，将字符串转为枚举值
-                const switchMode = document.getElementById('switch-mode').value === 'interval' ? 'interval' : 'time';
-                
+               const switchMode = document.getElementById('switch-mode').value === 'interval' ? 'interval' : 'time';
+
                 // 获取时间间隔
                 const switchInterval = parseInt(document.getElementById('switch-interval').value, 10);
                 
@@ -437,6 +593,8 @@
                         status
                     }
                 });
+                
+                showNotification('Saving settings...', 'info', 2000);
             }
             
             // 切换状态
@@ -484,10 +642,20 @@
                         updateStatusDisplay(currentStatus);
                         break;
                         
-                    
+                    case 'saveSuccess':
+                        showNotification('Settings saved successfully!', 'info', 3000);
+                        break;
+                        
+                    case 'saveFailed':
+                        showNotification(`Failed to save settings: ${message.error}`, 'error', 5000);
+                        break;
+                        
+                    case 'notification':
+                        showNotification(message.text, message.notificationType || 'info', message.duration || 3000);
+                        break;
                 }
             });
         })();
-            </script>
-        </body>
-        </html>
+    </script>
+</body>
+</html>

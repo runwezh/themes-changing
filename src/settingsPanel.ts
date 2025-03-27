@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { SwitchStatus } from './types';
+import { SwitchMode, SwitchStatus } from './types';
 import * as fs from 'fs';
 import { ThemeSwitcher } from './extension';
 
@@ -9,7 +9,7 @@ interface ConfigData {
     switchThemes: string[];
     switchInterval: number;
     switchTimes: string[];
-    switchMode: string;
+    switchMode: SwitchMode;
     status: SwitchStatus;
 }
 
@@ -29,7 +29,7 @@ export class SettingsPanel {
     private readonly _themeSwitcher: ThemeSwitcher;
     private _disposables: vscode.Disposable[] = [];
 
-    public static async createOrShow(extensionUri: vscode.Uri) {
+    public static async createOrShow(extensionUri: vscode.Uri, themeSwitcher: ThemeSwitcher) {
         const column = vscode.window.activeTextEditor
             ? vscode.window.activeTextEditor.viewColumn
             : undefined;
@@ -49,13 +49,13 @@ export class SettingsPanel {
             }
         );
 
-        SettingsPanel.currentPanel = new SettingsPanel(panel, extensionUri);
+        SettingsPanel.currentPanel = new SettingsPanel(panel, extensionUri, themeSwitcher);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, themeSwitcher: ThemeSwitcher) {
         this._panel = panel;
         this._extensionUri = extensionUri;
-        this._themeSwitcher = undefined as any;
+        this._themeSwitcher = themeSwitcher;
 
         this._update();
         
@@ -74,18 +74,18 @@ export class SettingsPanel {
         }
     }
 
-    private async _loadSavedConfig() {
+    private async _loadSavedConfig(): Promise<ConfigData> {
         const config = vscode.workspace.getConfiguration('themesChanging');
         const workbenchConfig = vscode.workspace.getConfiguration('workbench');
         const currentTheme = workbenchConfig.get('colorTheme') as string;
                     
-                    return {
+        return {
             defaultTheme: config.get('defaultTheme') || currentTheme,
             switchThemes: config.get('switchThemes') || [],
             switchInterval: config.get('switchInterval') || 30,
             switchTimes: config.get('switchTimes') || ['12:00:00'],
-            switchMode: config.get('switchMode') || 'interval',
-            status: config.get('status') || 'not_set'
+            switchMode: (config.get('switchMode') as SwitchMode) || SwitchMode.Interval,
+            status: (config.get('status') as SwitchStatus) || SwitchStatus.NotSet
         };
     }
 
@@ -183,14 +183,14 @@ export class SettingsPanel {
                     const displayLabel = this._getDisplayLabel(theme.label, extension.id);
                     
                     themes.push({
-                                        id: themeId,
+                        id: themeId,
                         label: displayLabel,
                         description: theme.description,
                         extension: extension.id,
                         originalLabel: originalLabel
-                                    });
-                                }
-                            }
+                    });
+                }
+            }
             
             // 去重并排序
             const uniqueThemes = this._removeDuplicateThemes(themes);
@@ -265,19 +265,15 @@ export class SettingsPanel {
             });
     }
 
+    // 修改 _setWebviewMessageListener 方法
     private _setWebviewMessageListener(webview: vscode.Webview) {
         webview.onDidReceiveMessage(
             async (message: { 
                 command: string; 
-                settings?: {
-                    defaultTheme: string;
-                    switchThemes: string[];
-                    switchInterval: number;
-                    switchTimes: string[];
-                    switchMode: string;
-                    status: string;
-                }; 
-                timestamp?: string 
+                settings?: ConfigData;  // 使用 ConfigData 接口替代内联类型定义
+                timestamp?: string;
+                type?: string;
+                message?: string;
             }) => {
                 // 处理来自WebView的消息
                 if (!message || !message.command) {
@@ -288,31 +284,47 @@ export class SettingsPanel {
                     case 'ready':
                         // WebView准备就绪
                         break;
-                            case 'getThemes':
+                    case 'getThemes':
                         // WebView请求获取主题列表
                         try {
                             const themes = await this._getAllThemes();
-                                            webview.postMessage({ 
-                                                type: 'themeList', 
-                                                themes 
-                                            });
-                                } catch (error) {
+                            webview.postMessage({ 
+                                type: 'themeList', 
+                                themes 
+                            });
+                        } catch (error) {
                             vscode.window.showErrorMessage(`获取主题列表失败: ${error}`);
-                                }
-                                break;
-                            case 'saveSettings':
+                        }
+                        break;
+                    case 'saveSettings':
                         // 保存设置
                         try {
                             if (message.settings) {
-                                await this._handleSaveSettings(message.settings);
-                                } else {
+                                // 在接收 WebView 消息时进行转换
+                                const switchModeStr = message.settings.switchMode as string;
+                                const switchMode = switchModeStr === 'interval' ? SwitchMode.Interval : SwitchMode.Time;
+
+                                const statusStr = message.settings.status as string;
+                                let status: SwitchStatus;
+                                switch(statusStr) {
+                                    case 'running': status = SwitchStatus.Running; break;
+                                    case 'paused': status = SwitchStatus.Paused; break;
+                                    default: status = SwitchStatus.NotSet;
+                                }
+
+                                await this._handleSaveSettings({
+                                    ...message.settings,
+                                    switchMode,
+                                    status
+                                });
+                            } else {
                                 vscode.window.showErrorMessage('保存设置失败：未提供有效的设置数据');
                             }
                         } catch (error) {
                             vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
-                                }
-                                break;
-                            case 'toggleStatus':
+                        }
+                        break;
+                    case 'toggleStatus':
                         // 切换状态
                         try {
                             await vscode.commands.executeCommand('themes-changing.toggleStatus');
@@ -320,17 +332,121 @@ export class SettingsPanel {
                             vscode.window.showErrorMessage(`切换状态时出错: ${error}`);
                         }
                         break;
+                    case 'showMessage':
+                        // 处理消息显示请求
+                        if (message.type === 'warning') {
+                            vscode.window.showWarningMessage(message.message || '');
+                        } else if (message.type === 'error') {
+                            vscode.window.showErrorMessage(message.message || '');
+                        } else {
+                            vscode.window.showInformationMessage(message.message || '');
+                        }
+                        break;
                     case 'debug':
                         // 调试消息，仅在开发时使用
-                                break;
-                            default:
+                        break;
+                    default:
                         // 未知命令
                         break;
                 }
             },
             null,
-                this._disposables
-            );
+            this._disposables
+        );
+    }
+
+    // 修改 _validateSettings 方法
+    private _validateSettings(config: ConfigData): string | null {
+        if (!config.defaultTheme || config.defaultTheme.trim() === '') {
+            return '默认主题不能为空！';
+        }
+        if (!Array.isArray(config.switchThemes)) {
+            return '切换主题列表无效！';
+        }
+        // 需要知道当前配置是哪种切换模式，按时间间隔还是按时间点
+        if (config.switchMode === SwitchMode.Time && config.switchTimes.length === 0) {
+            return '切换时间列表不能为空！请至少设置一个切换时间！';
+        }
+        if (config.switchMode === SwitchMode.Interval && config.switchInterval <= 0) {
+            return '切换间隔时间必须大于0！';
+        }
+        if (![SwitchMode.Interval, SwitchMode.Time].includes(config.switchMode)) {
+            return '切换模式无效，只能为 "interval" 或 "time"！';
+        }
+        if (![SwitchStatus.NotSet, SwitchStatus.Running, SwitchStatus.Paused].includes(config.status)) {
+            return '状态无效！';
+        }
+        return null;
+    }
+
+    // 修改 _handleSaveSettings 方法
+    private async _handleSaveSettings(config: ConfigData) {
+        try {
+            // 进行数据校验，返回错误提示信息或 null
+            const validationError = this._validateSettings(config);
+            if (validationError) {
+                vscode.window.showWarningMessage(`设置校验错误：${validationError}`);
+                return;
+            }
+
+            const vsCodeConfig = vscode.workspace.getConfiguration('themesChanging');
+            // 如果状态是not_set，则设置为running,并且让定时器开始跑起来
+            if (config.status === SwitchStatus.NotSet) {
+                config.status = SwitchStatus.Running;
+            }
+
+            // 保存每个配置项
+            const updates = [
+                vsCodeConfig.update('defaultTheme', config.defaultTheme, vscode.ConfigurationTarget.Global),
+                vsCodeConfig.update('switchThemes', config.switchThemes, vscode.ConfigurationTarget.Global),
+                vsCodeConfig.update('switchInterval', config.switchInterval, vscode.ConfigurationTarget.Global),
+                vsCodeConfig.update('switchTimes', config.switchTimes, vscode.ConfigurationTarget.Global),
+                vsCodeConfig.update('switchMode', config.switchMode, vscode.ConfigurationTarget.Global),
+                vsCodeConfig.update('status', config.status, vscode.ConfigurationTarget.Global)
+            ];
+
+            // 等待所有配置更新完成
+            await Promise.all(updates);
+            
+            // 如果默认主题已更改或者与当前主题不同，更新全局主题配置
+            const currentTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
+            if (config.defaultTheme !== vsCodeConfig.get('defaultTheme') || currentTheme !== config.defaultTheme) {
+                await vscode.workspace.getConfiguration('workbench').update('colorTheme', config.defaultTheme, vscode.ConfigurationTarget.Global);
+            }
+            
+            // 重要：通知 ThemeSwitcher 更新定时器
+            if (this._themeSwitcher) {
+                // 根据状态和模式重启定时器
+                if (config.status === SwitchStatus.Running) {
+                    // 停止现有定时器
+                    await this._themeSwitcher.stopScheduler();
+                    
+                    // 使用新配置重启定时器
+                    if (config.switchMode === SwitchMode.Interval) {
+                        await this._themeSwitcher.startIntervalScheduler(config.switchInterval, config.switchThemes);
+                    } else if (config.switchMode === SwitchMode.Time) {
+                        await this._themeSwitcher.startTimeScheduler(config.switchTimes, config.switchThemes);
+                    }
+                    // 确保定时器当前状态为running
+                    this._themeSwitcher.setStatus(config.status);
+                    // 发送当前状态到WebView
+                    this._panel.webview.postMessage({ type: 'timerStatus', status: config.status });
+            
+                    vscode.window.showInformationMessage('主题切换定时器已更新并已启动！');
+                } else if (config.status === SwitchStatus.Paused) {
+                    // 确保定时器已停止
+                    await this._themeSwitcher.stopScheduler();
+                    vscode.window.showInformationMessage('主题切换已暂停！');
+                }
+            } else {
+                vscode.window.showWarningMessage('无法访问主题切换器，请重启 VS Code 以应用更改。');
+            }
+            
+            vscode.window.showInformationMessage('设置已成功保存！');
+            
+        } catch (error) {
+            vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
+        }
     }
 
     // 修改 _sendDefaultThemes 方法，添加保存的配置参数
@@ -359,44 +475,78 @@ export class SettingsPanel {
         }
     }
 
-    // 保存配置
-    private async _handleSaveSettings(message: {
-        defaultTheme: string;
-        switchThemes: string[];
-        switchInterval: number;
-        switchTimes: string[];
-        switchMode: string;
-        status: string;
-    }) {
-        try {
-        const config = vscode.workspace.getConfiguration('themesChanging');
+    // 新增方法：校验设置数据，格式正确返回 null，否则返回错误提示信息
+    // private _validateSettings(message: {
+    //     defaultTheme: string;
+    //     switchThemes: string[];
+    //     switchInterval: number;
+    //     switchTimes: string[];
+    //     switchMode: string;
+    //     status: string;
+    // }): string | null {
+    //     if (!message.defaultTheme || message.defaultTheme.trim() === '') {
+    //         return '默认主题不能为空！';
+    //     }
+    //     if (!Array.isArray(message.switchThemes)) {
+    //         return '切换主题列表无效！';
+    //     }
+    //     // 需要知道当前配置是哪种切换模式，按时间间隔还是按时间点，如果按时间间隔则校验间隔时间数值必须大于0，如果按时间点则必须要有至少1个时间点
+    //     if (message.switchMode === 'time' && message.switchTimes.length === 0) {
+    //         return '切换时间列表不能为空！请至少设置一个切换时间！';
+    //     }
+    //     if (message.switchMode === 'interval' && message.switchInterval <= 0) {
+    //         return '切换间隔时间必须大于0！';
+    //     }
+    //     if (!['interval', 'time'].includes(message.switchMode)) {
+    //         return '切换模式无效，只能为 "interval" 或 "time"！';
+    //     }
+    //     if (!message.status || !['not_set', 'Running', 'Paused'].includes(message.status)) {
+    //         return '状态无效！';
+    //     }
+    //     return null;
+    // }
+    
+    // 修改 _handleSaveSettings 方法，增加数据校验并给出友好提示
+    // private async _handleSaveSettings(message: {
+    //     defaultTheme: string;
+    //     switchThemes: string[];
+    //     switchInterval: number;
+    //     switchTimes: string[];
+    //     switchMode: string;
+    //     status: string;
+    // }) {
+    //     try {
+    //         // 进行数据校验，返回错误提示信息或 null
+    //         const validationError = this._validateSettings(message);
+    //         if (validationError) {
+    //             vscode.window.showWarningMessage(`设置校验错误：${validationError}`);
+    //             return;
+    //         }
+    
+    //         const config = vscode.workspace.getConfiguration('themesChanging');
             
-            // 验证配置数据
-            if (!message || typeof message !== 'object') {
-                throw new Error('无效的配置数据');
-            }
-
-            // 保存每个配置项
-            const updates = [
-                config.update('defaultTheme', message.defaultTheme, vscode.ConfigurationTarget.Global),
-                config.update('switchThemes', message.switchThemes, vscode.ConfigurationTarget.Global),
-                config.update('switchInterval', message.switchInterval, vscode.ConfigurationTarget.Global),
-                config.update('switchTimes', message.switchTimes, vscode.ConfigurationTarget.Global),
-                config.update('switchMode', message.switchMode, vscode.ConfigurationTarget.Global),
-                config.update('status', message.status, vscode.ConfigurationTarget.Global)
-            ];
-
-            // 等待所有配置更新完成
-            await Promise.all(updates);
-            // 如果默认主题已更改或者与当前主题不同 ，更新全局配置
-            const currentTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
-            if (message.defaultTheme !== config.get('defaultTheme')|| currentTheme !== message.defaultTheme) {
-                await vscode.workspace.getConfiguration('workbench').update('colorTheme', message.defaultTheme, vscode.ConfigurationTarget.Global);
-            }
-        } catch (error) {
-            vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
-        }
-    }
+    //         // 保存每个配置项
+    //         const updates = [
+    //             config.update('defaultTheme', message.defaultTheme, vscode.ConfigurationTarget.Global),
+    //             config.update('switchThemes', message.switchThemes, vscode.ConfigurationTarget.Global),
+    //             config.update('switchInterval', message.switchInterval, vscode.ConfigurationTarget.Global),
+    //             config.update('switchTimes', message.switchTimes, vscode.ConfigurationTarget.Global),
+    //             config.update('switchMode', message.switchMode, vscode.ConfigurationTarget.Global),
+    //             config.update('status', message.status, vscode.ConfigurationTarget.Global)
+    //         ];
+    
+    //         // 等待所有配置更新完成
+    //         await Promise.all(updates);
+    //         // 如果默认主题已更改或者与当前主题不同 ，更新全局主题配置
+    //         const currentTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
+    //         if (message.defaultTheme !== config.get('defaultTheme') || currentTheme !== message.defaultTheme) {
+    //             await vscode.workspace.getConfiguration('workbench').update('colorTheme', message.defaultTheme, vscode.ConfigurationTarget.Global);
+    //         }
+    //         vscode.window.showInformationMessage('设置已成功保存！');
+    //     } catch (error) {
+    //         vscode.window.showErrorMessage(`保存配置时出错: ${error}`);
+    //     }
+    // }
 
     // 辅助方法获取切换时间
     private _getSwitchTimes(config: vscode.WorkspaceConfiguration): string[] {

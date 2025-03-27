@@ -10,7 +10,7 @@ export interface ThemeConfig {
     switchMode: 'interval' | 'time';
     status: SwitchStatus;
 }
-
+// 定时器有状态控制字段，
 export class ThemeSwitcher {
     private config: ThemeConfig;
     private intervalTimer: NodeJS.Timer | undefined;
@@ -269,6 +269,40 @@ export class ThemeSwitcher {
     public dispose() {
         this.clearTimers();
     }
+    // 设置主题配置的状态
+    public setStatus(status: SwitchStatus) {
+        this.config.status = status;
+        const config = vscode.workspace.getConfiguration('themesChanging');
+        config.update('status', status, true);
+    }
+
+    // 在 ThemeSwitcher 类中实现以下方法
+    public async stopScheduler(): Promise<void> {
+        // 停止所有计时器
+        this.clearTimers(); // 改为正确的方法名
+    }
+
+    public async startIntervalScheduler(intervalMinutes: number, themes: string[]): Promise<void> {
+        // 先清除现有计时器
+        this.clearTimers(); // 改为正确的方法名
+        
+        // 使用现有方法替代不存在的方法
+        this.config.switchInterval = intervalMinutes;
+        this.config.switchThemes = themes;
+        this.config.switchMode = 'interval';
+        this.startIntervalSwitching(); // 使用已有的方法
+    }
+
+    public async startTimeScheduler(times: string[], themes: string[]): Promise<void> {
+        // 先清除现有计时器
+        this.clearTimers(); // 改为正确的方法名
+        
+        // 使用现有方法替代不存在的方法
+        this.config.switchTimes = times;
+        this.config.switchThemes = themes;
+        this.config.switchMode = 'time';
+        this.startTimeSwitching(); // 使用已有的方法
+    }
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -280,7 +314,7 @@ export function activate(context: vscode.ExtensionContext) {
         }),
         
         vscode.commands.registerCommand('themes-changing.openSettings', () => {
-            SettingsPanel.createOrShow(context.extensionUri);
+            SettingsPanel.createOrShow(context.extensionUri, themeSwitcher); // 添加缺少的参数
         }),
         
         vscode.commands.registerCommand('themes-changing.updateConfig', (newConfig: Partial<ThemeConfig>) => {
@@ -303,4 +337,4 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(themeSwitcher);
 }
 
-export function deactivate() {} 
+export function deactivate() {}

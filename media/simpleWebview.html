@@ -385,12 +385,17 @@
                 
                 // 确保至少选择了一个主题
                 if (selectedThemes.length === 0) {
-                    alert('请至少选择一个主题');
+                    // 替换 alert 为 VS Code 消息
+                    vscode.postMessage({
+                        command: 'showMessage',
+                        type: 'warning',
+                        message: '待选择主题列表里，请至少选择一个主题'
+                    });
                     return;
                 }
                 
-                // 获取切换模式
-                const switchMode = document.getElementById('switch-mode').value;
+                // 获取切换模式，将字符串转为枚举值
+                const switchMode = document.getElementById('switch-mode').value === 'interval' ? 'interval' : 'time';
                 
                 // 获取时间间隔
                 const switchInterval = parseInt(document.getElementById('switch-interval').value, 10);
@@ -405,12 +410,17 @@
                 
                 // 确保时间模式下至少有一个时间点
                 if (switchMode === 'time' && switchTimes.length === 0) {
-                    alert('请至少设置一个时间点');
-                        return;
+                    // 替换 alert 为 VS Code 消息
+                    vscode.postMessage({
+                        command: 'showMessage',
+                        type: 'warning',
+                        message: '按时间点切换主题，请至少设置一个时间点'
+                    });
+                    return;
                 }
                 
-                // 设置状态为运行中
-                const status = currentStatus === 'not_set' ? 'running' : currentStatus;
+                // 设置状态为运行中，将字符串转为枚举值
+                const status = currentStatus === 'not_set' ? 'not_set' : currentStatus;
                 
                 // 发送保存请求
                 vscode.postMessage({
@@ -424,11 +434,11 @@
                         status
                     }
                 });
-                }
-                
-                // 切换状态
-                function toggleStatus() {
-                    vscode.postMessage({
+            }
+            
+            // 切换状态
+            function toggleStatus() {
+                vscode.postMessage({
                     command: 'toggleStatus'
                 });
             }
@@ -471,11 +481,7 @@
                         updateStatusDisplay(currentStatus);
                         break;
                         
-                    case 'statusUpdate':
-                        // 更新状态
-                        currentStatus = message.status;
-                        updateStatusDisplay(currentStatus);
-                        break;
+                    
                 }
             });
         })();

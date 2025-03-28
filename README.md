@@ -1,8 +1,8 @@
 # Themes Changing
 
-A smart VS Code/Cursor theme switching plugin, supporting scheduled and interval-based theme switches.
+A auto VS Code/Cursor theme switching plugin, supporting scheduled and interval-based theme switches.
 
-一个智能的 VS Code/Cursor 主题切换插件，支持定时切换和按时间间隔切换主题。
+一个自动的 VS Code/Cursor 主题切换插件，支持定时切换和按时间间隔切换主题。
 
 ## Features | 功能特点
 
@@ -21,10 +21,24 @@ A smart VS Code/Cursor theme switching plugin, supporting scheduled and interval
    - Default theme won't appear in the theme switch list
    - Changes to default theme are applied immediately
 
-   **默认主题设置**
-   - 可以从本地主题列表中选择一个作为默认主题
-   - 默认主题不会出现在待切换主题列表中
-   - 修改默认主题后会立即应用到当前环境
+   **Default Theme Settings | 默认主题设置**
+   - Select a theme from your local theme list as default theme | 可以从本地主题列表中选择一个作为默认主题
+   - Default theme won't appear in the theme switch list | 默认主题不会出现在待切换主题列表中
+   - Changes to default theme are applied immediately | 修改默认主题后会立即应用到当前环境
+
+3. **Automatic Theme Switching | 主题自动切换**
+   - Plugin automatically switches between default and switch list themes | 插件会根据设置的模式自动在默认主题和待切换主题之间切换
+   - In interval mode, switches occur at specified intervals | 间隔模式下，每隔设定的分钟数切换一次主题
+   - In time point mode, switches occur at specified times | 时间点模式下，在指定的时间点切换主题
+
+2. **Settings Persistence | 设置保存和恢复**
+   - All configurations are saved to VS Code settings | 所有配置会自动保存到 VS Code 配置中
+   - Plugin loads previous configuration after VS Code restart | 重启 VS Code 后，插件会自动加载上次的配置继续执行
+
+3. **Theme Management | 主题管理**
+   - Automatically detects all VS Code installed themes | 自动检测 VS Code 中安装的所有主题
+   - Supports third-party theme plugins | 支持第三方主题插件
+   - Theme list updates when themes are installed/uninstalled | 主题变更（安装/卸载）后会自动更新可选列表
 
 3. **Theme Switch List Management**
    - Select multiple themes from all available local themes
@@ -74,7 +88,7 @@ A smart VS Code/Cursor theme switching plugin, supporting scheduled and interval
 2. Run `npm install` to install dependencies
 3. Run `npm run compile` to compile the project
 4. Press F5 to start debugging
-
+---
 1. 克隆此仓库
 2. 运行 `npm install` 安装依赖
 3. 运行 `npm run compile` 编译项目
@@ -155,7 +169,7 @@ A smart VS Code/Cursor theme switching plugin, supporting scheduled and interval
 - `src/extension.ts` - Main source code for the plugin, contains theme switching logic
 - `src/settingsPanel.ts` - Settings interface implementation, includes UI rendering and settings persistence logic
 - `package.json` - Plugin configuration file, defines commands and settings
-
+---
 - `src/extension.ts` - 插件的主要源代码，包含主题切换逻辑
 - `src/settingsPanel.ts` - 设置界面实现代码，包含UI渲染和设置保存逻辑
 - `package.json` - 插件的配置文件，定义了命令和配置项
@@ -264,7 +278,7 @@ The test suite includes the following tests:
 2. Current theme may be temporarily changed during testing
 3. Ensure all dependencies are installed before testing
 4. If tests fail, check the console for detailed error messages
-
+***
 1. 测试会自动保存和恢复原始配置
 2. 测试过程中可能会短暂改变当前主题
 3. 确保测试前已安装所有依赖
@@ -278,7 +292,7 @@ The test suite includes the following tests:
 4. Only one theme switching mode (interval/time) can be active
 5. Changes to default theme are applied immediately
 6. After settings are changed, timer tasks automatically restart
-
+---
 1. 确保至少设置了一个默认主题
 2. 待切换主题列表必须至少包含一个主题
 3. 时间点切换模式下，同一个时间点只能设置一次
@@ -286,11 +300,61 @@ The test suite includes the following tests:
 5. 修改默认主题后会立即应用到当前环境
 6. 设置更改后，定时任务会自动重启
 
+## Mathematical Formulas | 数学公式
+
+Theme switching time calculation formulas:
+
+主题切换时间间隔计算公式：
+
+1. **Next Switch Time in Interval Mode | 时间间隔模式下的下次切换时间**：
+   
+   $t_{next} = t_{current} + interval_{minutes} \times 60$
+
+   Where | 其中：
+   - $t_{next}$ is the next switch time (in seconds) | 为下次切换时间（秒）
+   - $t_{current}$ is the current time (in seconds) | 为当前时间（秒）
+   - $interval_{minutes}$ is the set interval in minutes | 为设置的间隔分钟数
+
+2. **Wait Time in Time Point Mode | 时间点模式下的等待时间**：
+   
+   $t_{wait} = \begin{cases} 
+   t_{target} - t_{current}, & \text{if } t_{target} > t_{current} \\
+   24 \times 3600 - (t_{current} - t_{target}), & \text{if } t_{target} \leq t_{current}
+   \end{cases}$
+
+   
+   Where | 其中：
+   - $t_{wait}$ is the time to wait (in seconds) | 为需要等待的时间（秒）
+   - $t_{target}$ is the target switch time (in seconds) | 为目标切换时间点（秒）
+   - $t_{current}$ is the current time (in seconds) | 为当前时间（秒）
+
+   
+ 3. **Default Theme Settings | 默认主题设置**
+   - Select a theme from your local theme list as default theme | 可以从本地主题列表中选择一个作为默认主题
+   - Default theme won't appear in the theme switch list | 默认主题不会出现在待切换主题列表中
+   - Changes to default theme are applied immediately | 修改默认主题后会立即应用到当前环境
+
+4. **Automatic Theme Switching | 主题自动切换**
+   - Plugin automatically switches between default and switch list themes | 插件会根据设置的模式自动在默认主题和待切换主题之间切换
+   - In interval mode, switches occur at specified intervals | 间隔模式下，每隔设定的分钟数切换一次主题
+   - In time point mode, switches occur at specified times | 时间点模式下，在指定的时间点切换主题
+
+5. **Settings Persistence | 设置保存和恢复**
+   - All configurations are saved to VS Code settings | 所有配置会自动保存到 VS Code 配置中
+   - Plugin loads previous configuration after VS Code restart | 重启 VS Code 后，插件会自动加载上次的配置继续执行
+
+6. **Theme Management | 主题管理**
+   - Automatically detects all VS Code installed themes | 自动检测 VS Code 中安装的所有主题
+   - Supports third-party theme plugins | 支持第三方主题插件
+   - Theme list updates when themes are installed/uninstalled | 主题变更（安装/卸载）后会自动更新可选列表
+
+
+
 ## License | 许可证
 
 This project is licensed under the [MIT License](LICENSE).
 
-本项目采用 [MIT 许可证](LICENSE)。
+
 
 ```
 MIT License
@@ -314,4 +378,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-``` 
+```

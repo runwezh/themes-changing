@@ -2,7 +2,7 @@
   "name": "themes-changing",
   "displayName": "Themes Changing",
   "description": "A Theme changer plugin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "AlfredZhao",
   "engines": {
     "vscode": "^1.60.0"

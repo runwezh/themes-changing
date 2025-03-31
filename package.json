@@ -3,7 +3,7 @@
   "displayName": "Themes Changing",
   "description": "A Theme changer plugin",
   "version": "0.0.1",
-  "publisher": "zhao",
+  "publisher": "AlfredZhao",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -11,6 +11,17 @@
     "Other",
     "Themes"
   ],
+  "keywords": ["theme", "switch", "automatic", "time-based"],
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/runwezh/themes-changing.git"
+
+  },
+  "homepage": "https://github.com/runwezh/themes-changing/blob/master/README.md",
+  "bugs": {
+    "url": "https://github.com/runwezh/themes-changing/issues"
+  },
   "activationEvents": [
     "onStartupFinished",
     "onCommand:themes-changing.updateConfig"
@@ -99,5 +110,6 @@
     "ts-node": "^10.9.2",
     "typescript": "5.3.3",
     "vscode-test": "^1.6.1"
-  }
+  },
+  "license": "MIT"
 }

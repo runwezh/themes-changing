@@ -4,6 +4,30 @@ A auto VS Code/Cursor theme switching plugin, supporting scheduled and interval-
 
 一个自动的 VS Code/Cursor 主题切换插件，支持定时切换和按时间间隔切换主题。
 
+## Who Needs This Plugin?
+Got a ton of theme plugins you'll never finish using? Tired of eye strain and boredom while coding?
+Give it a try! Set it to switch themes every minute—doesn't that sound more fun?
+
+## 谁需要使用这个插件？
+如果你有一堆主题插件一辈子也用不完，如果你写代码觉得眼睛酸痛很无聊，
+你可以试试这个插件，设置1分钟切换一次主题，
+是不是开心很多？
+
+## Quick Setup
+1. Press Ctrl (Mac Command) + Shift + P, search for Themes Changing: Open Theme Settings
+![1743392911050](image/README/1743392911050.png)
+2. Check the themes you want to switch
+3. Select interval time (e.g., 1 minute or any custom number)
+4. Save the settings
+![1743393223641](image/README/1743393223641.png)
+
+## 快速使用
+1. ctr(mac command)+shift+p 搜索Themes Changing:Open theme Settings
+2. 勾选需要参与切换的主题
+3. 选择按间隔时间，1分钟（或者任一数字）
+4. 保存设置
+
+
 ## Features | 功能特点
 
 1. **Visual Settings Interface**

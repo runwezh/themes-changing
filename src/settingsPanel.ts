@@ -134,15 +134,15 @@ export class SettingsPanel {
     private _getStatusDetails(status: SwitchStatus, mode: string, interval: number, times: string[]): string {
         if (status === SwitchStatus.NotSet) {
             return 'Theme switching has not been configured yet.';
-        } else if (status === SwitchStatus.Paused) {
+        } 
+        if (status === SwitchStatus.Paused) {
             return 'Theme switching is currently paused. Press Resume to start again.';
-        } else {
-            if (mode === 'interval') {
-                return `Switching themes every ${interval} minutes.`;
-            } else {
-                return `Switching themes daily at: ${times.join(', ')}.`;
-            }
         }
+        
+        if (mode === 'interval') {
+            return `Switching themes every ${interval} minutes.`;
+        }
+        return `Switching themes daily at: ${times.join(', ')}.`;
     }
 
     private async _getAllThemes(): Promise<ThemeInfo[]> {

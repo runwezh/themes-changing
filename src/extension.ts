@@ -98,16 +98,16 @@ export class ThemeSwitcher {
         }
         
         // Schedule each time point
-        this.config.switchTimes.forEach(timeString => {
+        for (const timeString of this.config.switchTimes) {
             this.scheduleTimeSwitch(timeString);
-        });
+        }
     }
 
     private scheduleTimeSwitch(timeString: string) {
         try {
             const [hours, minutes, seconds] = timeString.split(':').map(Number);
             
-            if (isNaN(hours) || isNaN(minutes) || (seconds !== undefined && isNaN(seconds))) {
+            if (Number.isNaN(hours) || Number.isNaN(minutes) || (seconds !== undefined && Number.isNaN(seconds))) {
                 return;
             }
             
@@ -252,9 +252,9 @@ export class ThemeSwitcher {
     }
     
     private clearTimeTimers() {
-        this.timeTimers.forEach(timer => {
+        for (const timer of this.timeTimers) {
             clearTimeout(timer);
-        });
+        }
         this.timeTimers = [];
     }
     

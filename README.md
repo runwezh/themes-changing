@@ -374,6 +374,48 @@ Theme switching time calculation formulas:
 
 
 
+
+
+## 更新日志 | Changelog
+
+### v0.1.0 (2025-07-23)
+- **新增主题列表过滤功能**
+  - 在主题列表上方添加了过滤条件栏
+  - 支持按"全部"、"已选"、"白天"、"夜晚"条件筛选主题
+  - 支持通过名称进行模糊搜索
+  - 过滤选项横向居中对齐，搜索框左对齐
+  - 单选按钮与文字垂直居中对齐
+
+- **改进主题分类逻辑**
+  - 白天主题关键词扩展：light, day, white, bright, clear, sunny, light-colored, 浅色, 白色, 明亮, 亮色, 亮色的, 浅色的
+  - 夜晚主题关键词扩展：dark, night, black, dim, deep, midnight, twilight, dark-colored, 深色, 黑色, 暗色, 暗色的, 深色的, 黑色的, dracula
+  - 特殊主题如"Dracula"被正确识别为夜晚主题
+  - 支持中英文混合关键词识别
+
+- **UI优化**
+  - 过滤容器样式优化，提升视觉一致性
+  - 添加红色和蓝色边框辅助调试元素对齐
+  - 使用transform微调单选按钮位置，确保视觉对齐
+
+### English Version
+- **Added theme list filtering feature**
+  - Added filter bar above theme list
+  - Support filtering by "All", "Selected", "Day", "Night" conditions
+  - Support fuzzy search by theme name
+  - Filter options horizontally centered, search box left-aligned
+  - Radio buttons vertically centered with text
+
+- **Improved theme classification logic**
+  - Extended day theme keywords: light, day, white, bright, clear, sunny, light-colored, 浅色, 白色, 明亮, 亮色, 亮色的, 浅色的
+  - Extended night theme keywords: dark, night, black, dim, deep, midnight, twilight, dark-colored, 深色, 黑色, 暗色, 暗色的, 深色的, 黑色的, dracula
+  - Special themes like "Dracula" correctly identified as night themes
+  - Support mixed Chinese-English keyword recognition
+
+- **UI improvements**
+  - Optimized filter container styling for better visual consistency
+  - Added red and blue borders for debugging element alignment
+  - Used transform to fine-tune radio button position for perfect visual alignment
+
 ## License | 许可证
 
 This project is licensed under the [MIT License](LICENSE).

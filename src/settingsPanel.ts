@@ -11,6 +11,7 @@ interface ConfigData {
     switchTimes: string[];
     switchMode: SwitchMode;
     status: SwitchStatus;
+    currentTheme: string;
 }
 
 interface ThemeInfo {
@@ -85,7 +86,8 @@ export class SettingsPanel {
             switchInterval: config.get('switchInterval') || 30,
             switchTimes: config.get('switchTimes') || ['12:00:00'],
             switchMode: (config.get('switchMode') as SwitchMode) || SwitchMode.Interval,
-            status: (config.get('status') as SwitchStatus) || SwitchStatus.NotSet
+            status: (config.get('status') as SwitchStatus) || SwitchStatus.NotSet,
+            currentTheme: currentTheme
         };
     }
 

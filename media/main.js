@@ -53,8 +53,6 @@
     
     // 加载初始配置
     function loadInitialConfig(config) {
-        // 这里不需要保存到全局变量，直接在需要时使用 config.switchThemes
-        
         // 设置切换模式
         document.getElementById('switch-mode').value = config.switchMode || 'interval';
         toggleSwitchMode(config.switchMode || 'interval');
@@ -68,6 +66,9 @@
         // 设置状态
         currentStatus = config.status || 'not_set';
         updateStatusDisplay(currentStatus);
+        
+        // 更新当前主题显示
+        updateCurrentThemeDisplay(window.initialConfig?.currentTheme || 'Unknown');
         
         // 请求主题列表
         vscode.postMessage({
@@ -169,6 +170,17 @@
         }
     }
     
+    // 更新当前主题显示
+    function updateCurrentThemeDisplay(currentTheme) {
+        const currentThemeName = document.getElementById('current-theme-name');
+        if (currentThemeName) {
+            // 查找主题名称
+            const theme = allThemes.find(t => t.id === currentTheme);
+            const displayName = theme ? theme.label : currentTheme || 'Unknown';
+            currentThemeName.textContent = displayName;
+        }
+    }
+    
     // 填充主题列表
     function populateThemes(themes, currentTheme, defaultTheme, selectedThemes) {
         // 填充默认主题下拉框
@@ -222,6 +234,9 @@
         // 显示设置容器，隐藏加载提示
         document.getElementById('loading').style.display = 'none';
         document.getElementById('settings-container').style.display = 'block';
+        
+        // 更新当前主题显示
+        updateCurrentThemeDisplay(currentTheme);
     }
     
     // 自定义通知系统

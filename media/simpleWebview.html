@@ -178,6 +178,14 @@
             border-radius: 4px;
         }
         
+        /* 当前主题信息显示 */
+        .current-theme-info {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+            font-style: italic;
+        }
+        
         /* 自定义通知系统 */
         .notification-container {
             position: fixed;
@@ -233,6 +241,7 @@
         <div class="section">
             <div class="section-title">Default Theme</div>
             <select id="default-theme"></select>
+            <div id="current-theme-info" class="current-theme-info">Current theme: <span id="current-theme-name">Loading...</span></div>
         </div>
             
         <div class="section">

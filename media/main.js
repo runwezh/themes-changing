@@ -25,32 +25,6 @@
         }
     });
     
-    // 设置事件监听器
-    function setupEventListeners() {
-        // 切换模式
-        document.getElementById('switch-mode').addEventListener('change', (event) => {
-            toggleSwitchMode(event.target.value);
-        });
-        
-        // 添加时间点
-        document.getElementById('add-time').addEventListener('click', () => {
-            addTimeInput();
-        });
-        
-        // 保存设置
-        document.getElementById('save-settings').addEventListener('click', () => {
-            saveSettings();
-        });
-        
-        // 切换状态
-        document.getElementById('toggle-status').addEventListener('click', () => {
-            toggleStatus();
-            currentStatus = currentStatus === 'running' ? 'paused' : 'running';
-            //更新显示状态
-            updateStatusDisplay(currentStatus);
-        });
-    }
-    
     // 加载初始配置
     function loadInitialConfig(config) {
         // 设置切换模式
@@ -181,6 +155,64 @@
         }
     }
     
+    // 判断主题是白天还是夜晚
+    function isDayTheme(themeLabel) {
+        // 转换为小写以便比较
+        const label = themeLabel.toLowerCase();
+        
+        // 常见的白天主题关键词
+        const dayKeywords = ['light', 'day', 'white', 'bright', 'clear', 'sunny', 'light-colored', 'light-color', 'light-colour', 'light-coloured', '浅色', '白色', '明亮', '亮色', '亮色的', '浅色的'];
+        
+        // 常见的夜晚主题关键词
+        const nightKeywords = ['dark', 'night', 'black', 'dim', 'deep', 'midnight', 'twilight', 'dark-colored', 'dark-color', 'dark-colour', 'dark-coloured', '深色', '黑色', '暗色', '暗色的', '深色的', '黑色的', 'dracula'];
+        
+        // 检查是否包含白天关键词
+        for (const keyword of dayKeywords) {
+            if (label.includes(keyword)) {
+                return true;
+            }
+        }
+        
+        // 检查是否包含夜晚关键词
+        for (const keyword of nightKeywords) {
+            if (label.includes(keyword)) {
+                return false;
+            }
+        }
+        
+        // 如果无法判断，按夜晚主题处理
+        return false;
+    }
+    
+    // 过滤主题
+    function filterThemes(themes, selectedThemes, currentTheme, filterType, searchQuery) {
+        return themes.filter(theme => {
+            // 跳过当前主题
+            if (theme.id === currentTheme) {
+                return false;
+            }
+            
+            // 根据过滤类型进行过滤
+            switch (filterType) {
+                case 'selected':
+                    return selectedThemes.includes(theme.id);
+                case 'day':
+                    return isDayTheme(theme.label);
+                case 'night':
+                    return !isDayTheme(theme.label);
+                default:
+                    // 'all' 或其他情况，不进行类型过滤
+                    return true;
+            }
+        }).filter(theme => {
+            // 搜索过滤
+            if (!searchQuery) {
+                return true;
+            }
+            return theme.label.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+    }
+    
     // 填充主题列表
     function populateThemes(themes, currentTheme, defaultTheme, selectedThemes) {
         // 填充默认主题下拉框
@@ -199,16 +231,18 @@
             }
         }
         
+        // 获取过滤条件
+        const filterType = document.querySelector('input[name="themeFilter"]:checked')?.value || 'all';
+        const searchQuery = document.getElementById('themeSearch')?.value || '';
+        
+        // 过滤主题
+        const filteredThemes = filterThemes(themes, selectedThemes, currentTheme, filterType, searchQuery);
+        
         // 填充主题列表
         const themeList = document.getElementById('theme-list');
         themeList.innerHTML = '';
         
-        for (const theme of themes) {
-            // 跳过当前主题，因为它已经是默认主题
-            if (theme.id === currentTheme) {
-                continue;
-            }
-            
+        for (const theme of filteredThemes) {
             const div = document.createElement('div');
             div.className = 'theme-item';
             
@@ -237,6 +271,53 @@
         
         // 更新当前主题显示
         updateCurrentThemeDisplay(currentTheme);
+    }
+    
+    // 更新主题列表显示
+    function updateThemeListDisplay() {
+        if (window.initialConfig && allThemes.length > 0) {
+            populateThemes(
+                allThemes,
+                window.initialConfig.currentTheme,
+                window.initialConfig.defaultTheme,
+                window.initialConfig.switchThemes || []
+            );
+        }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+        // 切换模式
+        document.getElementById('switch-mode').addEventListener('change', (event) => {
+            toggleSwitchMode(event.target.value);
+        });
+        
+        // 添加时间点
+        document.getElementById('add-time').addEventListener('click', () => {
+            addTimeInput();
+        });
+        
+        // 保存设置
+        document.getElementById('save-settings').addEventListener('click', () => {
+            saveSettings();
+        });
+        
+        // 切换状态
+        document.getElementById('toggle-status').addEventListener('click', () => {
+            toggleStatus();
+            currentStatus = currentStatus === 'running' ? 'paused' : 'running';
+            //更新显示状态
+            updateStatusDisplay(currentStatus);
+        });
+        
+        // 过滤条件变化
+        const filterRadios = document.querySelectorAll('input[name="themeFilter"]');
+        for (const radio of filterRadios) {
+            radio.addEventListener('change', updateThemeListDisplay);
+        }
+        
+        // 搜索输入变化
+        document.getElementById('themeSearch').addEventListener('input', updateThemeListDisplay);
     }
     
     // 自定义通知系统

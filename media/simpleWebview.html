@@ -87,6 +87,51 @@
             border-radius: 3px;
         }
         
+        /* 过滤容器 */
+        .filter-container {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        
+        /* 过滤选项 */
+        .filter-options {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .filter-options label {
+            margin: 0 10px;
+            display: flex;
+            align-items: center;
+            line-height: 1;
+        }
+        
+        .filter-options input[type="radio"] {
+            margin-right: 5px;
+            accent-color: blue;
+            transform: translateY(5px);
+        }
+        
+        /* 搜索容器 */
+        .search-container {
+            text-align: left;
+        }
+        
+        #themeSearch {
+            width: 100%;
+            padding: 8px 10px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
+        }
+        
+        #themeSearch:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            border-color: var(--vscode-focusBorder);
+        }
+        
         .theme-item {
             display: flex;
             align-items: center;
@@ -246,6 +291,17 @@
             
         <div class="section">
             <div class="section-title">Theme Switch List</div>
+            <div class="filter-container">
+                <div class="filter-options">
+                    <label><input type="radio" name="themeFilter" value="all" checked> All</label>
+                    <label><input type="radio" name="themeFilter" value="selected"> Selected</label>
+                    <label><input type="radio" name="themeFilter" value="day"> Day</label>
+                    <label><input type="radio" name="themeFilter" value="night"> Night</label>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="themeSearch" placeholder="Search themes by name">
+                </div>
+            </div>
             <div class="theme-list" id="theme-list"></div>
         </div>
 

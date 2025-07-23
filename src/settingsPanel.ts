@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { SwitchMode, SwitchStatus } from './types';
-import * as fs from 'fs';
-import { ThemeSwitcher } from './extension';
+import * as fs from 'node:fs';
+import type { ThemeSwitcher } from './extension';
 
 // 添加配置数据接口
 interface ConfigData {
@@ -89,12 +89,13 @@ export class SettingsPanel {
         };
     }
 
-    private async _getWebviewContent(config: any) {
+    private async _getWebviewContent(config: ConfigData) {
         const webview = this._panel.webview;
-        // const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
-        // const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'style.css'));
         
-        // 读取 HTML 文件并注入配置
+        // 创建安全的资源 URI
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
+        
+        // 读取 HTML 文件
         const htmlPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'simpleWebview.html');
         let htmlContent = await fs.promises.readFile(htmlPath.fsPath, 'utf8');
         
@@ -107,6 +108,9 @@ export class SettingsPanel {
         
         // 将配置注入到 HTML 中的占位符位置
         htmlContent = htmlContent.replace('// CONFIGURATION_PLACEHOLDER', configScript);
+        
+        // 替换 main.js 的相对路径为安全的 WebView URI
+        htmlContent = htmlContent.replace('src="main.js"', `src="${scriptUri}"`);
         
         return htmlContent;
     }
@@ -220,7 +224,7 @@ export class SettingsPanel {
         }
         
         // 从扩展ID中提取发布者和扩展名
-        const [publisher, name] = extensionId.split('.');
+        const [, name] = extensionId.split('.');
         
         // 对于特殊情况的处理
         if (extensionId.startsWith('vscode.')) {
@@ -265,12 +269,11 @@ export class SettingsPanel {
             });
     }
 
-    // 修改 _setWebviewMessageListener 方法
     private _setWebviewMessageListener(webview: vscode.Webview) {
         webview.onDidReceiveMessage(
             async (message: { 
                 command: string; 
-                settings?: ConfigData;  // 使用 ConfigData 接口替代内联类型定义
+                settings?: ConfigData;
                 timestamp?: string;
                 type?: string;
                 message?: string;
@@ -355,7 +358,6 @@ export class SettingsPanel {
         );
     }
 
-    // 修改 _validateSettings 方法
     private _validateSettings(config: ConfigData): string | null {
         if (!config.defaultTheme || config.defaultTheme.trim() === '') {
             return 'Default theme cannot be empty!';
@@ -379,7 +381,6 @@ export class SettingsPanel {
         return null;
     }
 
-    // 修改 _handleSaveSettings 方法
     private async _handleSaveSettings(config: ConfigData) {
         try {
             // 数据校验
@@ -448,8 +449,7 @@ export class SettingsPanel {
         }
     }
 
-    // 修改 _sendDefaultThemes 方法，添加保存的配置参数
-    private async _sendDefaultThemes(webview: vscode.Webview, savedConfig?: any) {
+    private async _sendDefaultThemes(webview: vscode.Webview, savedConfig?: ConfigData) {
         try {
         // 默认主题列表
         const defaultThemes = [
@@ -467,16 +467,13 @@ export class SettingsPanel {
             webview.postMessage({ 
                 type: 'themeList', 
                 themes: defaultThemes,
-                savedConfig: savedConfig || this._loadSavedConfig()
+                savedConfig: savedConfig || await this._loadSavedConfig()
             });
         } catch (error) {
             vscode.window.showErrorMessage(`Error sending default theme list: ${error}`);
         }
     }
 
-   
-
-    // 辅助方法获取切换时间
     private _getSwitchTimes(config: vscode.WorkspaceConfiguration): string[] {
         let switchTimes = config.get<string[]>('switchTimes') || [];
         
@@ -496,7 +493,6 @@ export class SettingsPanel {
         return switchTimes;
     }
 
-    // 备用方法，返回原始的硬编码 HTML
     private _getDefaultSimpleWebviewContent(): string {
         return `<!DOCTYPE html>
 <html lang="en">

@@ -1,4 +1,4 @@
-import * as path from 'path';
+import * as path from 'node:path';
 import { runTests } from 'vscode-test';
 
 async function main() {
@@ -15,7 +15,7 @@ async function main() {
             extensionTestsPath,
             launchArgs: [
                 '--disable-extensions',
-                `--timeout`, '600000'
+                '--timeout', '600000'
             ]
         });
     } catch (err) {
@@ -23,4 +23,4 @@ async function main() {
     }
 }
 
-main(); 
+main();

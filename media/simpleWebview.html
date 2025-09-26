@@ -139,9 +139,28 @@
             text-align: left;
             padding: 4px 0;
         }
-        
+
         .theme-item:hover {
             background-color: var(--vscode-list-hoverBackground);
+        }
+
+        .theme-item.current-theme-item {
+            opacity: 0.75;
+        }
+
+        .theme-item .current-theme-checkbox {
+            accent-color: var(--vscode-checkbox-background);
+        }
+
+        .theme-item .current-theme-label {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .theme-item .current-theme-badge {
+            margin-left: 6px;
+            font-size: 12px;
+            color: var(--vscode-textLink-foreground, #3794ff);
         }
         
         .theme-item input[type="checkbox"] {

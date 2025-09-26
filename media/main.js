@@ -2,6 +2,28 @@
     const vscode = acquireVsCodeApi();
     let allThemes = [];
     let currentStatus = 'not_set';
+
+    function normalizeThemeId(themeName) {
+        if (!themeName) {
+            return '';
+        }
+        return themeName
+            .replace(/["'`]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+    }
+
+    function findThemeByIdentifier(identifier) {
+        const normalized = normalizeThemeId(identifier);
+        if (!normalized) {
+            return undefined;
+        }
+        return allThemes.find(theme => {
+            return normalizeThemeId(theme.id) === normalized ||
+                normalizeThemeId(theme.originalLabel) === normalized;
+        });
+    }
     
     // 初始化页面
     document.addEventListener('DOMContentLoaded', () => {
@@ -148,8 +170,7 @@
     function updateCurrentThemeDisplay(currentTheme) {
         const currentThemeName = document.getElementById('current-theme-name');
         if (currentThemeName) {
-            // 查找主题名称
-            const theme = allThemes.find(t => t.id === currentTheme);
+            const theme = findThemeByIdentifier(currentTheme);
             const displayName = theme ? theme.label : currentTheme || 'Unknown';
             currentThemeName.textContent = displayName;
         }
@@ -186,80 +207,95 @@
     
     // 过滤主题
     function filterThemes(themes, selectedThemes, currentTheme, filterType, searchQuery) {
+        const normalizedCurrent = normalizeThemeId(currentTheme);
+        const selectedNormalized = new Set((selectedThemes || []).map(normalizeThemeId));
+        const normalizedSearch = searchQuery ? searchQuery.toLowerCase() : '';
+
         return themes.filter(theme => {
-            // 跳过当前主题
-            if (theme.id === currentTheme) {
-                return false;
-            }
-            
-            // 根据过滤类型进行过滤
+            const themeIdNormalized = normalizeThemeId(theme.id);
+            const themeLabelNormalized = normalizeThemeId(theme.originalLabel);
             switch (filterType) {
                 case 'selected':
-                    return selectedThemes.includes(theme.id);
+                    return selectedNormalized.has(themeIdNormalized) || selectedNormalized.has(themeLabelNormalized);
                 case 'day':
                     return isDayTheme(theme.label);
                 case 'night':
                     return !isDayTheme(theme.label);
                 default:
-                    // 'all' 或其他情况，不进行类型过滤
                     return true;
             }
         }).filter(theme => {
-            // 搜索过滤
-            if (!searchQuery) {
+            if (!normalizedSearch) {
                 return true;
             }
-            return theme.label.toLowerCase().includes(searchQuery.toLowerCase());
+            return theme.label.toLowerCase().includes(normalizedSearch);
         });
     }
     
     // 填充主题列表
     function populateThemes(themes, currentTheme, defaultTheme, selectedThemes) {
-        // 填充默认主题下拉框
         const defaultThemeSelect = document.getElementById('default-theme');
         defaultThemeSelect.innerHTML = '';
-        
+
+        const normalizedDefault = normalizeThemeId(defaultTheme);
+        const normalizedCurrent = normalizeThemeId(currentTheme);
+        const selectedNormalized = new Set((selectedThemes || []).map(normalizeThemeId));
+
         for (const theme of themes) {
             const option = document.createElement('option');
             option.value = theme.id;
             option.textContent = theme.label;
-            defaultThemeSelect.appendChild(option);
-            
-            // 如果是默认主题或当前主题，选中它
-            if (theme.id === defaultTheme || (defaultTheme === undefined && theme.id === currentTheme)) {
+            option.dataset.originalLabel = theme.originalLabel;
+
+            if (normalizedDefault && (normalizeThemeId(theme.id) === normalizedDefault || normalizeThemeId(theme.originalLabel) === normalizedDefault)) {
+                option.selected = true;
+            } else if (!normalizedDefault && normalizedCurrent && (normalizeThemeId(theme.id) === normalizedCurrent || normalizeThemeId(theme.originalLabel) === normalizedCurrent)) {
                 option.selected = true;
             }
+
+            defaultThemeSelect.appendChild(option);
         }
-        
-        // 获取过滤条件
+
         const filterType = document.querySelector('input[name="themeFilter"]:checked')?.value || 'all';
         const searchQuery = document.getElementById('themeSearch')?.value || '';
-        
-        // 过滤主题
+
         const filteredThemes = filterThemes(themes, selectedThemes, currentTheme, filterType, searchQuery);
-        
-        // 填充主题列表
+
         const themeList = document.getElementById('theme-list');
         themeList.innerHTML = '';
-        
+
         for (const theme of filteredThemes) {
             const div = document.createElement('div');
             div.className = 'theme-item';
-            
+
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.value = theme.id;
             checkbox.id = `theme-${theme.id}`;
-            
-            // 如果在选中列表中，勾选它
-            if (selectedThemes.includes(theme.id)) {
+            checkbox.dataset.originalLabel = theme.originalLabel;
+
+            const themeIdNormalized = normalizeThemeId(theme.id);
+            const themeLabelNormalized = normalizeThemeId(theme.originalLabel);
+            if (selectedNormalized.has(themeIdNormalized) || selectedNormalized.has(themeLabelNormalized)) {
                 checkbox.checked = true;
             }
-            
+
             const label = document.createElement('label');
             label.htmlFor = `theme-${theme.id}`;
             label.textContent = theme.label;
-            
+
+            const isCurrentTheme = normalizedCurrent && (themeIdNormalized === normalizedCurrent || themeLabelNormalized === normalizedCurrent);
+            if (isCurrentTheme) {
+                div.classList.add('current-theme-item');
+                checkbox.classList.add('current-theme-checkbox');
+                label.classList.add('current-theme-label');
+                label.title = 'Current Theme';
+                const badge = document.createElement('span');
+                badge.className = 'current-theme-badge';
+                badge.textContent = ' (Current Theme)';
+                label.appendChild(badge);
+            }
+
             div.appendChild(checkbox);
             div.appendChild(label);
             themeList.appendChild(div);
@@ -342,15 +378,28 @@
     
     // 保存设置
     function saveSettings() {
-        // 获取默认主题
-        const defaultTheme = document.getElementById('default-theme').value;
-        
-        // 获取选中的主题
-        const selectedThemes = [];
-        for (const checkbox of document.querySelectorAll('#theme-list input[type="checkbox"]:checked')) {
-            selectedThemes.push(checkbox.value);
+        const defaultThemeSelect = document.getElementById('default-theme');
+        let defaultTheme = '';
+        if (defaultThemeSelect && defaultThemeSelect.selectedIndex >= 0) {
+            const selectedOption = defaultThemeSelect.options[defaultThemeSelect.selectedIndex];
+            const originalLabel = selectedOption?.dataset?.originalLabel;
+            defaultTheme = originalLabel || selectedOption?.value || '';
         }
-        
+
+        // 获取选中的主题
+        const selectedThemeSet = new Set();
+        for (const checkbox of document.querySelectorAll('#theme-list input[type="checkbox"]:checked')) {
+            const datasetLabel = checkbox.dataset?.originalLabel;
+            const resolvedTheme = datasetLabel || checkbox.value;
+            const themeInfo = findThemeByIdentifier(resolvedTheme);
+            const finalThemeName = themeInfo ? themeInfo.originalLabel : resolvedTheme;
+            if (finalThemeName) {
+                selectedThemeSet.add(finalThemeName);
+            }
+        }
+
+        const selectedThemes = Array.from(selectedThemeSet);
+
         // 确保至少选择了一个主题
         if (selectedThemes.length === 0) {
             // 替换 alert 为 VS Code 消息
@@ -363,11 +412,25 @@
         }
         
         // 获取切换模式，将字符串转为枚举值
-       const switchMode = document.getElementById('switch-mode').value === 'interval' ? 'interval' : 'time';
+        const switchMode = document.getElementById('switch-mode').value === 'interval' ? 'interval' : 'time';
 
         // 获取时间间隔
-        const switchInterval = Number.parseInt(document.getElementById('switch-interval').value, 10);
-        
+        const intervalInput = document.getElementById('switch-interval');
+        let switchInterval = Number.parseInt(intervalInput.value, 10);
+        if (!Number.isFinite(switchInterval) || switchInterval <= 0) {
+            const fallbackInterval = (window.initialConfig && Number.isFinite(window.initialConfig.switchInterval) && window.initialConfig.switchInterval > 0)
+                ? window.initialConfig.switchInterval
+                : 30;
+            intervalInput.value = fallbackInterval.toString();
+            vscode.postMessage({
+                command: 'showMessage',
+                type: 'warning',
+                message: 'Please enter a switch interval greater than 0 minutes'
+            });
+            intervalInput.focus();
+            return;
+        }
+
         // 获取时间点
         const switchTimes = [];
         for (const input of document.querySelectorAll('.switch-time')) {
@@ -390,6 +453,16 @@
         // 设置状态为运行中，将字符串转为枚举值
         const status = currentStatus === 'not_set' ? 'not_set' : currentStatus;
         
+        if (!window.initialConfig) {
+            window.initialConfig = {};
+        }
+        window.initialConfig.defaultTheme = defaultTheme;
+        window.initialConfig.switchThemes = selectedThemes;
+        window.initialConfig.switchInterval = switchInterval;
+        window.initialConfig.switchTimes = switchTimes;
+        window.initialConfig.switchMode = switchMode;
+        window.initialConfig.status = status;
+
         // 发送保存请求
         vscode.postMessage({
             command: 'saveSettings',

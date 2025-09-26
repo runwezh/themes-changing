@@ -96,6 +96,8 @@ export class SettingsPanel {
         
         // 创建安全的资源 URI
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
+        const nonce = this._getNonce();
+        const cspMeta = `    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; media-src ${webview.cspSource}; script-src 'nonce-${nonce}' ${webview.cspSource} http://localhost:8097; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; connect-src ${webview.cspSource} https: http://localhost:8097;">`;
         
         // 读取 HTML 文件
         const htmlPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'simpleWebview.html');
@@ -103,18 +105,30 @@ export class SettingsPanel {
         
         // 注入配置数据
         const configScript = `
-            <script>
+            <script nonce="${nonce}">
                 window.initialConfig = ${JSON.stringify(config)};
             </script>
         `;
         
         // 将配置注入到 HTML 中的占位符位置
         htmlContent = htmlContent.replace('// CONFIGURATION_PLACEHOLDER', configScript);
-        
+
+        // 插入 CSP Meta 标签
+        htmlContent = htmlContent.replace('<meta charset="UTF-8">', `<meta charset="UTF-8">\n${cspMeta}`);
+
         // 替换 main.js 的相对路径为安全的 WebView URI
-        htmlContent = htmlContent.replace('src="main.js"', `src="${scriptUri}"`);
-        
+        htmlContent = htmlContent.replace('src="main.js"', `nonce="${nonce}" src="${scriptUri}"`);
+
         return htmlContent;
+    }
+
+    private _getNonce(): string {
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let text = '';
+        for (let i = 0; i < 32; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
     }
 
     public dispose() {
@@ -371,8 +385,10 @@ export class SettingsPanel {
         if (config.switchMode === SwitchMode.Time && config.switchTimes.length === 0) {
             return 'Switch time list cannot be empty! Please set at least one switch time!';
         }
-        if (config.switchMode === SwitchMode.Interval && config.switchInterval <= 0) {
-            return 'Switch interval must be greater than 0!';
+        if (config.switchMode === SwitchMode.Interval) {
+            if (!Number.isFinite(config.switchInterval) || config.switchInterval <= 0) {
+                return 'Switch interval must be greater than 0!';
+            }
         }
         if (![SwitchMode.Interval, SwitchMode.Time].includes(config.switchMode)) {
             return 'Switch mode is invalid, must be "interval" or "time"!';

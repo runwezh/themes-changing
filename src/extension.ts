@@ -15,6 +15,9 @@ export class ThemeSwitcher {
     private config: ThemeConfig;
     private intervalTimer: NodeJS.Timer | undefined;
     private timeTimers: NodeJS.Timer[] = [];
+    private themeMap: Map<string, string> | undefined;
+    private themeIndex = -1;
+    private lastAppliedTheme: string | undefined;
 
     constructor(private context: vscode.ExtensionContext) {
         this.config = this.loadConfig();
@@ -23,10 +26,131 @@ export class ThemeSwitcher {
         }
     }
 
+    private normalizeThemeId(theme?: string): string {
+        if (!theme) {
+            return '';
+        }
+        return theme
+            .replace(/["'`]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+    }
+
+    private getThemeMap(): Map<string, string> {
+        if (this.themeMap) {
+            return this.themeMap;
+        }
+
+        const map = new Map<string, string>();
+
+        const register = (key: string | undefined, label: string | undefined) => {
+            if (!key || !label) {
+                return;
+            }
+            map.set(this.normalizeThemeId(key), label);
+        };
+
+        const ensure = (label: string, id?: string) => {
+            const finalLabel = label || id;
+            if (!finalLabel) {
+                return;
+            }
+            register(label, finalLabel);
+            if (id) {
+                register(id, finalLabel);
+            }
+        };
+
+        for (const extension of vscode.extensions.all) {
+            const contributes = extension.packageJSON?.contributes;
+            const themes = contributes?.themes;
+            if (!Array.isArray(themes)) {
+                continue;
+            }
+            for (const theme of themes) {
+                const label = typeof theme?.label === 'string' ? theme.label : undefined;
+                const id = typeof theme?.id === 'string' ? theme.id : undefined;
+                const fallbackLabel = label || id;
+                if (!fallbackLabel) {
+                    continue;
+                }
+                ensure(fallbackLabel, id);
+            }
+        }
+
+        const builtIns = [
+            'Default Dark+',
+            'Default Light+',
+            'Visual Studio Dark',
+            'Visual Studio Light',
+            'High Contrast',
+            'Monokai',
+            'Solarized Dark',
+            'Solarized Light'
+        ];
+
+        for (const themeName of builtIns) {
+            ensure(themeName, themeName);
+        }
+
+        this.themeMap = map;
+        return map;
+    }
+
+    private resolveThemeName(theme: string | undefined): string {
+        if (!theme) {
+            return '';
+        }
+        const normalized = this.normalizeThemeId(theme);
+        if (!normalized) {
+            return theme;
+        }
+        const map = this.getThemeMap();
+        return map.get(normalized) || theme;
+    }
+
+    private normalizeThemeList(themes: string[]): string[] {
+        const resolvedThemes: string[] = [];
+        const seen = new Set<string>();
+        for (const theme of themes) {
+            const resolved = this.resolveThemeName(theme);
+            const key = this.normalizeThemeId(resolved);
+            if (!key || seen.has(key)) {
+                continue;
+            }
+            seen.add(key);
+            resolvedThemes.push(resolved);
+        }
+        return resolvedThemes;
+    }
+
+    private findThemeIndex(themes: string[], themeName: string): number {
+        const targetKey = this.normalizeThemeId(themeName);
+        if (!targetKey) {
+            return -1;
+        }
+        return themes.findIndex(candidate => this.normalizeThemeId(candidate) === targetKey);
+    }
+
+    private haveThemesChanged(existing: string[], normalized: string[]): boolean {
+        if (existing.length !== normalized.length) {
+            return true;
+        }
+        for (let i = 0; i < existing.length; i++) {
+            if (this.normalizeThemeId(existing[i]) !== this.normalizeThemeId(normalized[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private loadConfig(): ThemeConfig {
         const config = vscode.workspace.getConfiguration('themesChanging');
-        const defaultTheme = config.get<string>('defaultTheme') || '';
-        const switchThemes = config.get<string[]>('switchThemes') || [];
+        const storedDefaultTheme = config.get<string>('defaultTheme') || '';
+        const defaultTheme = this.resolveThemeName(storedDefaultTheme);
+        const storedSwitchThemes = config.get<string[]>('switchThemes') || [];
+        const switchThemes = this.normalizeThemeList(storedSwitchThemes);
         const switchInterval = config.get<number>('switchInterval') || 30;
         
         // Get switch times array or convert legacy single time to array
@@ -55,7 +179,14 @@ export class ThemeSwitcher {
             config.update('status', status, true);
         }
 
-        return {
+        if (storedDefaultTheme && this.normalizeThemeId(storedDefaultTheme) !== this.normalizeThemeId(defaultTheme)) {
+            void config.update('defaultTheme', defaultTheme, true);
+        }
+        if (storedSwitchThemes.length !== switchThemes.length || storedSwitchThemes.some((theme, index) => this.normalizeThemeId(theme) !== this.normalizeThemeId(switchThemes[index]))) {
+            void config.update('switchThemes', switchThemes, true);
+        }
+
+        const themeConfig: ThemeConfig = {
             defaultTheme,
             switchThemes,
             switchInterval,
@@ -63,6 +194,10 @@ export class ThemeSwitcher {
             switchMode,
             status
         };
+
+        this.themeIndex = -1;
+
+        return themeConfig;
     }
 
     private async startThemeSwitching() {
@@ -141,38 +276,82 @@ export class ThemeSwitcher {
     }
 
     private async switchTheme() {
-        if (this.config.switchThemes.length === 0 || this.config.status !== SwitchStatus.Running) {
+        if (this.config.status !== SwitchStatus.Running) {
             return;
         }
 
-        const currentTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
-        
-        if (this.config.switchThemes.length === 1) {
-            // If there's only one theme in the switch list, alternate between default theme and the single theme
-            const newTheme = currentTheme === this.config.defaultTheme ? 
-                this.config.switchThemes[0] : 
-                this.config.defaultTheme;
-            await this.applyTheme(newTheme);
-        } else {
-            // Randomly select a theme
-            const availableThemes = this.config.switchThemes.filter(theme => theme !== currentTheme);
-            if (availableThemes.length > 0) {
-                const randomIndex = Math.floor(Math.random() * availableThemes.length);
-                await this.applyTheme(availableThemes[randomIndex]);
+        const normalizedThemes = this.normalizeThemeList(this.config.switchThemes);
+        if (normalizedThemes.length === 0) {
+            return;
+        }
+        if (this.haveThemesChanged(this.config.switchThemes, normalizedThemes)) {
+            this.config.switchThemes = normalizedThemes;
+            this.themeIndex = -1;
+        }
+
+        const workbenchConfig = vscode.workspace.getConfiguration('workbench');
+        const currentThemeSetting = workbenchConfig.get<string>('colorTheme') || '';
+        const currentTheme = this.resolveThemeName(currentThemeSetting);
+        const currentKey = this.normalizeThemeId(currentTheme);
+
+        let nextTheme: string | undefined;
+
+        if (normalizedThemes.length === 1) {
+            const targetTheme = normalizedThemes[0];
+            const targetKey = this.normalizeThemeId(targetTheme);
+            const defaultTheme = this.resolveThemeName(this.config.defaultTheme);
+            const defaultKey = this.normalizeThemeId(defaultTheme);
+
+            if (defaultKey && defaultKey !== targetKey) {
+                nextTheme = currentKey === defaultKey ? targetTheme : defaultTheme;
+            } else if (!currentKey || currentKey !== targetKey) {
+                nextTheme = targetTheme;
             }
+
+            if (nextTheme) {
+                this.themeIndex = this.findThemeIndex(normalizedThemes, nextTheme);
+            }
+        } else {
+            if (this.themeIndex < 0 || this.themeIndex >= normalizedThemes.length) {
+                let alignedIndex = this.findThemeIndex(normalizedThemes, this.lastAppliedTheme || '');
+                if (alignedIndex === -1) {
+                    alignedIndex = this.findThemeIndex(normalizedThemes, currentTheme);
+                }
+                this.themeIndex = alignedIndex;
+            }
+
+            const baseIndex = this.themeIndex >= 0 ? this.themeIndex : -1;
+            const nextIndex = (baseIndex + 1) % normalizedThemes.length;
+            const candidateTheme = normalizedThemes[nextIndex];
+
+            if (this.normalizeThemeId(candidateTheme) === currentKey) {
+                const fallbackIndex = (nextIndex + 1) % normalizedThemes.length;
+                this.themeIndex = fallbackIndex;
+                nextTheme = normalizedThemes[fallbackIndex];
+            } else {
+                this.themeIndex = nextIndex;
+                nextTheme = candidateTheme;
+            }
+        }
+
+        if (nextTheme) {
+            await this.applyTheme(nextTheme);
         }
     }
 
     private async applyTheme(theme: string) {
         try {
-            await vscode.workspace.getConfiguration('workbench').update('colorTheme', theme, true);
+            const resolvedTheme = this.resolveThemeName(theme);
+            await vscode.workspace.getConfiguration('workbench').update('colorTheme', resolvedTheme, true);
+            this.lastAppliedTheme = resolvedTheme;
         } catch (error) {
             this.handleThemeError(theme);
         }
     }
 
     private handleThemeError(theme: string) {
-        vscode.window.showErrorMessage(`Theme "${theme}" switching failed, please reconfigure`, 'Open Settings')
+        const resolvedTheme = this.resolveThemeName(theme);
+        vscode.window.showErrorMessage(`Theme "${resolvedTheme}" switching failed, please reconfigure`, 'Open Settings')
             .then(selection => {
                 if (selection === 'Open Settings') {
                     vscode.commands.executeCommand('themes-changing.openSettings');
@@ -183,25 +362,35 @@ export class ThemeSwitcher {
     public async updateConfig(newConfig: Partial<ThemeConfig>) {
         // Save the old config to check for changes
         const oldConfig = { ...this.config };
-        
+        const updatedConfig: Partial<ThemeConfig> = { ...newConfig };
+
+        if (updatedConfig.defaultTheme !== undefined) {
+            updatedConfig.defaultTheme = this.resolveThemeName(updatedConfig.defaultTheme);
+        }
+
+        if (updatedConfig.switchThemes !== undefined) {
+            updatedConfig.switchThemes = this.normalizeThemeList(updatedConfig.switchThemes);
+        }
+
         // Update the config with new values
-        this.config = { ...this.config, ...newConfig };
-        
+        this.config = { ...this.config, ...updatedConfig };
+
         // Save the configuration to workspace settings
         const config = vscode.workspace.getConfiguration('themesChanging');
         
         // Update each property if it has changed
-        if (newConfig.defaultTheme !== undefined) {
-            await config.update('defaultTheme', newConfig.defaultTheme, true);
+        if (updatedConfig.defaultTheme !== undefined) {
+            await config.update('defaultTheme', this.config.defaultTheme, true);
             
             // Apply the default theme immediately if it has changed
-            if (newConfig.defaultTheme !== oldConfig.defaultTheme) {
-                await this.applyTheme(newConfig.defaultTheme);
+            if (this.normalizeThemeId(this.config.defaultTheme) !== this.normalizeThemeId(oldConfig.defaultTheme)) {
+                await this.applyTheme(this.config.defaultTheme);
             }
         }
         
-        if (newConfig.switchThemes !== undefined) {
-            await config.update('switchThemes', newConfig.switchThemes, true);
+        if (updatedConfig.switchThemes !== undefined) {
+            this.themeIndex = -1;
+            await config.update('switchThemes', this.config.switchThemes, true);
         }
         
         if (newConfig.switchInterval !== undefined) {
@@ -287,9 +476,11 @@ export class ThemeSwitcher {
         this.clearTimers(); // 改为正确的方法名
         
         // 使用现有方法替代不存在的方法
+        const normalizedThemes = this.normalizeThemeList(themes);
         this.config.switchInterval = intervalMinutes;
-        this.config.switchThemes = themes;
+        this.config.switchThemes = normalizedThemes;
         this.config.switchMode = 'interval';
+        this.themeIndex = -1;
         this.startIntervalSwitching(); // 使用已有的方法
     }
 
@@ -298,9 +489,11 @@ export class ThemeSwitcher {
         this.clearTimers(); // 改为正确的方法名
         
         // 使用现有方法替代不存在的方法
+        const normalizedThemes = this.normalizeThemeList(themes);
         this.config.switchTimes = times;
-        this.config.switchThemes = themes;
+        this.config.switchThemes = normalizedThemes;
         this.config.switchMode = 'time';
+        this.themeIndex = -1;
         this.startTimeSwitching(); // 使用已有的方法
     }
 }

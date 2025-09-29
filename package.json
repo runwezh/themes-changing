@@ -1,8 +1,8 @@
 {
   "name": "themes-changing",
   "displayName": "Themes Changing",
-  "description": "A Theme changer plugin",
-  "version": "0.1.0",
+  "description": "A Theme changer plugin with BMad project management integration",
+  "version": "0.2.0",
   "publisher": "AlfredZhao",
   "engines": {
     "vscode": "^1.60.0"
@@ -15,7 +15,11 @@
     "theme",
     "switch",
     "automatic",
-    "time-based"
+    "time-based",
+    "bmad",
+    "project-management",
+    "documentation",
+    "templates"
   ],
   "icon": "media/icon.png",
   "repository": {

@@ -1,0 +1,59 @@
+# VS Code 插件打包忽略文件
+
+# 源代码目录（只打包编译后的 out 目录）
+src/**
+tsconfig.json
+
+# 开发依赖和工具
+node_modules/**
+.vscode/**
+.vscode-test/**
+
+# 测试文件
+src/test/**
+out/test/**
+*.test.js
+*.test.ts
+
+# 开发工具配置
+.eslintrc.json
+.gitignore
+.git/**
+
+# 文档和说明（保留 README.md）
+FEATURE_DESIGN.md
+AGENTS.md
+BMAD_INTEGRATION.md
+THEME_SELECTION_FIX.md
+
+# BMad 相关目录（开发工具，不需要打包到插件中）
+.bmad-core/**
+
+# 构建和临时文件
+*.vsix
+*.log
+.DS_Store
+Thumbs.db
+
+# 开发脚本
+scripts/**
+
+# 备份文件
+*.bak
+*.backup
+*~
+
+# IDE 配置
+.idea/**
+*.swp
+*.swo
+
+# 包管理器文件
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 环境配置
+.env
+.env.local
+.env.*.local

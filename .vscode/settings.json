@@ -1,4 +1,5 @@
 {
     "commentTranslate.sourceLanguage": "auto",
-    "commentTranslate.targetLanguage": "zh-CN"
+    "commentTranslate.targetLanguage": "zh-CN",
+    "i18n-ally.localesPaths": []
 }

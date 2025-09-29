@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SettingsPanel } from './settingsPanel';
 import { SwitchStatus } from './types';
+import { BMadManager } from './bmadManager';
 
 export interface ThemeConfig {
     defaultTheme: string;
@@ -500,35 +501,80 @@ export class ThemeSwitcher {
 
 export function activate(context: vscode.ExtensionContext) {
     const themeSwitcher = new ThemeSwitcher(context);
-    
+    const bmadManager = new BMadManager(context);
+
+    // Initialize BMad Manager
+    bmadManager.initialize().then(success => {
+        if (success) {
+            vscode.window.showInformationMessage('🧙 BMad Master activated! Use Command Palette: "BMad: Help" to get started.');
+        }
+    });
+
     context.subscriptions.push(
         vscode.commands.registerCommand('themes-changing.toggleStatus', () => {
             themeSwitcher.toggleStatus();
         }),
-        
+
         vscode.commands.registerCommand('themes-changing.openSettings', () => {
             SettingsPanel.createOrShow(context.extensionUri, themeSwitcher); // 添加缺少的参数
         }),
-        
+
         vscode.commands.registerCommand('themes-changing.updateConfig', (newConfig: Partial<ThemeConfig>) => {
             themeSwitcher.updateConfig(newConfig);
         }),
-        
+
         // 修改 theme-changing.applyDefaultTheme 命令的消息提示
         vscode.commands.registerCommand('themes-changing.applyDefaultTheme', async () => {
             const config = vscode.workspace.getConfiguration('themesChanging');
             const defaultTheme = config.get('defaultTheme') as string;
-            
+
             if (defaultTheme) {
                 await vscode.workspace.getConfiguration('workbench').update('colorTheme', defaultTheme, true);
                 vscode.window.showInformationMessage(`Theme switched to default: ${defaultTheme}`);
             } else {
                 vscode.window.showWarningMessage('No default theme set');
             }
+        }),
+
+        // BMad Commands
+        vscode.commands.registerCommand('bmad.help', () => {
+            bmadManager.executeCommand('help');
+        }),
+
+        vscode.commands.registerCommand('bmad.task', async () => {
+            const taskName = await vscode.window.showInputBox({
+                prompt: 'Enter task name (leave empty to list all tasks)',
+                placeHolder: 'e.g., create-doc, document-project'
+            });
+            bmadManager.executeCommand('task', taskName ? [taskName] : undefined);
+        }),
+
+        vscode.commands.registerCommand('bmad.createDoc', async () => {
+            const templateName = await vscode.window.showInputBox({
+                prompt: 'Enter template name (leave empty to list all templates)',
+                placeHolder: 'e.g., prd, story, architecture'
+            });
+            bmadManager.executeCommand('create-doc', templateName ? [templateName] : undefined);
+        }),
+
+        vscode.commands.registerCommand('bmad.executeChecklist', async () => {
+            const checklistName = await vscode.window.showInputBox({
+                prompt: 'Enter checklist name (leave empty to list all checklists)',
+                placeHolder: 'e.g., architect, story-dod, pm'
+            });
+            bmadManager.executeCommand('execute-checklist', checklistName ? [checklistName] : undefined);
+        }),
+
+        vscode.commands.registerCommand('bmad.documentProject', () => {
+            bmadManager.executeCommand('document-project');
+        }),
+
+        vscode.commands.registerCommand('bmad.knowledgeBase', () => {
+            bmadManager.executeCommand('kb');
         })
     );
 
-    context.subscriptions.push(themeSwitcher);
+    context.subscriptions.push(themeSwitcher, bmadManager);
 }
 
 export function deactivate() {}

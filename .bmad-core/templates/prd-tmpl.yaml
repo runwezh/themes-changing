@@ -1,0 +1,184 @@
+template:
+  name: "Product Requirements Document"
+  version: "1.0"
+  description: "Comprehensive PRD template for feature development"
+  
+structure:
+  title: "{product_name} - Product Requirements Document"
+  
+  sections:
+    - name: "Executive Summary"
+      content: |
+        ## Executive Summary
+        
+        **Product:** {product_name}
+        **Version:** {version}
+        **Date:** {date}
+        **Author:** {author}
+        **Stakeholders:** {stakeholders}
+        
+        ### Overview
+        {overview}
+        
+        ### Key Objectives
+        {key_objectives}
+        
+        ### Success Metrics
+        {success_metrics}
+    
+    - name: "Problem Statement"
+      content: |
+        ## Problem Statement
+        
+        ### Current State
+        {current_state}
+        
+        ### Pain Points
+        {pain_points}
+        
+        ### Target Users
+        {target_users}
+        
+        ### User Personas
+        {user_personas}
+    
+    - name: "Solution Overview"
+      content: |
+        ## Solution Overview
+        
+        ### Proposed Solution
+        {proposed_solution}
+        
+        ### Key Features
+        {key_features}
+        
+        ### User Journey
+        {user_journey}
+        
+        ### Value Proposition
+        {value_proposition}
+    
+    - name: "Functional Requirements"
+      content: |
+        ## Functional Requirements
+        
+        ### Core Features
+        {core_features}
+        
+        ### User Stories
+        {user_stories}
+        
+        ### Acceptance Criteria
+        {acceptance_criteria}
+        
+        ### Edge Cases
+        {edge_cases}
+    
+    - name: "Non-Functional Requirements"
+      content: |
+        ## Non-Functional Requirements
+        
+        ### Performance
+        {performance_requirements}
+        
+        ### Security
+        {security_requirements}
+        
+        ### Scalability
+        {scalability_requirements}
+        
+        ### Usability
+        {usability_requirements}
+    
+    - name: "Technical Considerations"
+      content: |
+        ## Technical Considerations
+        
+        ### Architecture
+        {architecture_overview}
+        
+        ### Dependencies
+        {dependencies}
+        
+        ### Integration Points
+        {integration_points}
+        
+        ### Technical Risks
+        {technical_risks}
+    
+    - name: "Implementation Plan"
+      content: |
+        ## Implementation Plan
+        
+        ### Timeline
+        {timeline}
+        
+        ### Milestones
+        {milestones}
+        
+        ### Resource Requirements
+        {resource_requirements}
+        
+        ### Risk Mitigation
+        {risk_mitigation}
+
+fields:
+  product_name:
+    type: "string"
+    required: true
+    description: "Name of the product or feature"
+  
+  version:
+    type: "string"
+    required: true
+    description: "Version number"
+  
+  author:
+    type: "string"
+    required: true
+    description: "Document author"
+  
+  stakeholders:
+    type: "string"
+    required: true
+    description: "Key stakeholders involved"
+  
+  overview:
+    type: "text"
+    required: true
+    description: "High-level product overview"
+  
+  key_objectives:
+    type: "text"
+    required: true
+    description: "Primary objectives and goals"
+  
+  success_metrics:
+    type: "text"
+    required: true
+    description: "How success will be measured"
+  
+  current_state:
+    type: "text"
+    required: true
+    description: "Description of current situation"
+  
+  pain_points:
+    type: "text"
+    required: true
+    description: "Key problems to solve"
+  
+  target_users:
+    type: "text"
+    required: true
+    description: "Target user groups"
+  
+  proposed_solution:
+    type: "text"
+    required: true
+    description: "Detailed solution description"
+  
+  key_features:
+    type: "text"
+    required: true
+    description: "List of key features"

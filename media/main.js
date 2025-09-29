@@ -280,6 +280,15 @@
                 checkbox.checked = true;
             }
 
+            // 添加复选框状态变化监听器
+            checkbox.addEventListener('change', () => {
+                // 实时更新配置中的选中主题列表
+                const currentSelectedThemes = getCurrentSelectedThemes();
+                if (window.initialConfig) {
+                    window.initialConfig.switchThemes = currentSelectedThemes;
+                }
+            });
+
             const label = document.createElement('label');
             label.htmlFor = `theme-${theme.id}`;
             label.textContent = theme.label;
@@ -309,9 +318,85 @@
         updateCurrentThemeDisplay(currentTheme);
     }
     
+    // 获取当前选中的主题列表
+    function getCurrentSelectedThemes() {
+        const selectedThemes = [];
+
+        // 获取当前过滤器设置
+        const currentFilter = document.querySelector('input[name="themeFilter"]:checked')?.value || 'all';
+
+        if (currentFilter === 'all') {
+            // 如果当前是 "all" 视图，直接从当前显示的复选框获取
+            const checkboxes = document.querySelectorAll('#theme-list input[type="checkbox"]:checked');
+            for (const checkbox of checkboxes) {
+                const originalLabel = checkbox.dataset?.originalLabel;
+                const resolvedTheme = originalLabel || checkbox.value;
+                const themeInfo = findThemeByIdentifier(resolvedTheme);
+                const finalThemeName = themeInfo ? themeInfo.originalLabel : resolvedTheme;
+                if (finalThemeName) {
+                    selectedThemes.push(finalThemeName);
+                }
+            }
+        } else {
+            // 如果当前不是 "all" 视图，需要从所有主题中检查哪些被选中
+            // 这种情况下，我们需要保持现有的选中状态，并加上当前视图中的更改
+            const currentConfig = window.initialConfig?.switchThemes || [];
+            const currentViewSelected = new Set();
+
+            // 获取当前视图中选中的主题
+            const checkboxes = document.querySelectorAll('#theme-list input[type="checkbox"]:checked');
+            for (const checkbox of checkboxes) {
+                const originalLabel = checkbox.dataset?.originalLabel;
+                const resolvedTheme = originalLabel || checkbox.value;
+                const themeInfo = findThemeByIdentifier(resolvedTheme);
+                const finalThemeName = themeInfo ? themeInfo.originalLabel : resolvedTheme;
+                if (finalThemeName) {
+                    currentViewSelected.add(finalThemeName);
+                }
+            }
+
+            // 获取当前视图中未选中的主题
+            const currentViewUnselected = new Set();
+            const allCheckboxes = document.querySelectorAll('#theme-list input[type="checkbox"]:not(:checked)');
+            for (const checkbox of allCheckboxes) {
+                const originalLabel = checkbox.dataset?.originalLabel;
+                const resolvedTheme = originalLabel || checkbox.value;
+                const themeInfo = findThemeByIdentifier(resolvedTheme);
+                const finalThemeName = themeInfo ? themeInfo.originalLabel : resolvedTheme;
+                if (finalThemeName) {
+                    currentViewUnselected.add(finalThemeName);
+                }
+            }
+
+            // 合并：保留原有选中的主题（除了当前视图中被取消选中的），加上当前视图中新选中的
+            for (const theme of currentConfig) {
+                if (!currentViewUnselected.has(theme)) {
+                    selectedThemes.push(theme);
+                }
+            }
+
+            // 添加当前视图中新选中的主题
+            for (const theme of currentViewSelected) {
+                if (!selectedThemes.includes(theme)) {
+                    selectedThemes.push(theme);
+                }
+            }
+        }
+
+        return selectedThemes;
+    }
+
     // 更新主题列表显示
     function updateThemeListDisplay() {
         if (window.initialConfig && allThemes.length > 0) {
+            // 获取当前实际选中的主题（从DOM中读取）
+            const currentSelectedThemes = getCurrentSelectedThemes();
+
+            // 如果有选中的主题，更新配置
+            if (currentSelectedThemes.length > 0) {
+                window.initialConfig.switchThemes = currentSelectedThemes;
+            }
+
             populateThemes(
                 allThemes,
                 window.initialConfig.currentTheme,

@@ -11,12 +11,16 @@
     "Other",
     "Themes"
   ],
-  "keywords": ["theme", "switch", "automatic", "time-based"],
+  "keywords": [
+    "theme",
+    "switch",
+    "automatic",
+    "time-based"
+  ],
   "icon": "media/icon.png",
   "repository": {
     "type": "github",
     "url": "https://github.com/runwezh/themes-changing.git"
-
   },
   "homepage": "https://github.com/runwezh/themes-changing/blob/master/README.md",
   "bugs": {
@@ -38,6 +42,36 @@
         "command": "themes-changing.toggleStatus",
         "title": "Themes Changing: Toggle Theme Switching (Pause/Resume)",
         "category": "Themes Changing"
+      },
+      {
+        "command": "bmad.help",
+        "title": "BMad: Help",
+        "category": "BMad Master"
+      },
+      {
+        "command": "bmad.task",
+        "title": "BMad: Execute Task",
+        "category": "BMad Master"
+      },
+      {
+        "command": "bmad.createDoc",
+        "title": "BMad: Create Document",
+        "category": "BMad Master"
+      },
+      {
+        "command": "bmad.executeChecklist",
+        "title": "BMad: Execute Checklist",
+        "category": "BMad Master"
+      },
+      {
+        "command": "bmad.documentProject",
+        "title": "BMad: Document Project",
+        "category": "BMad Master"
+      },
+      {
+        "command": "bmad.knowledgeBase",
+        "title": "BMad: Knowledge Base",
+        "category": "BMad Master"
       }
     ],
     "configuration": {
@@ -66,18 +100,27 @@
           "items": {
             "type": "string"
           },
-          "default": ["12:00:00"],
+          "default": [
+            "12:00:00"
+          ],
           "description": "切换时间点列表"
         },
         "themesChanging.switchMode": {
           "type": "string",
-          "enum": ["interval", "time"],
+          "enum": [
+            "interval",
+            "time"
+          ],
           "default": "interval",
           "description": "切换模式"
         },
         "themesChanging.status": {
           "type": "string",
-          "enum": ["running", "paused", "not_set"],
+          "enum": [
+            "running",
+            "paused",
+            "not_set"
+          ],
           "default": "not_set",
           "description": "当前状态"
         }
@@ -111,5 +154,9 @@
     "typescript": "5.3.3",
     "vscode-test": "^1.6.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "js-yaml": "^4.1.0"
+  }
 }

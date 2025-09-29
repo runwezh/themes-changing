@@ -10,12 +10,11 @@ async function main() {
         const extensionTestsPath = path.resolve(__dirname, './suite/index');
 
         // 下载 VS Code，解压并运行集成测试
-        await runTests({ 
-            extensionDevelopmentPath, 
+        await runTests({
+            extensionDevelopmentPath,
             extensionTestsPath,
             launchArgs: [
-                '--disable-extensions',
-                '--timeout', '600000'
+                '--disable-extensions'
             ]
         });
     } catch (err) {

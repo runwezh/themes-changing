@@ -1,5 +1,33 @@
 # 更新日志 / Changelog
 
+## [0.2.2] - 2025-09-30
+
+### 🧹 重构 / Refactoring
+
+- **移除 BMad 集成**: 完全移除了 BMad 项目管理功能，让插件专注于核心的主题切换功能
+  - 删除了所有 BMad 相关的命令和代码
+  - 移除了 `.bmad-core` 目录及其所有内容
+  - 卸载了 `js-yaml` 和 `@types/js-yaml` 依赖
+  - 简化了插件描述和关键词
+  - 减小了插件体积，提升了启动速度
+- **Removed BMad Integration**: Completely removed BMad project management features to focus on core theme switching functionality
+  - Removed all BMad-related commands and code
+  - Deleted `.bmad-core` directory and all its contents
+  - Uninstalled `js-yaml` and `@types/js-yaml` dependencies
+  - Simplified extension description and keywords
+  - Reduced extension size and improved startup speed
+
+### 🐛 Bug 修复 / Bug Fixes
+
+- **修复插件激活问题**: 修复了插件显示"一直在激活中"的问题
+  - 移除了可能阻塞激活的 BMad 初始化代码
+  - 简化了 `activate` 函数，确保快速激活
+- **Fixed activation issue**: Fixed the issue where extension showed "activating" indefinitely
+  - Removed BMad initialization code that could block activation
+  - Simplified `activate` function to ensure fast activation
+
+---
+
 ## [0.2.1] - 2025-09-30
 
 ### 🐛 Bug 修复 / Bug Fixes
@@ -26,26 +54,6 @@
 - Root cause: When renaming the extension on 2025-03-26, main commands were missed in activation events
 
 ---
-
-## [0.2.0] - 2025-09-29
-
-### ✨ 新功能 / New Features
-
-- **BMad 项目管理集成**: 集成了 BMad Master 项目管理功能
-  - 添加了文档模板系统（PRD、项目简介、用户故事）
-  - 添加了工作流支持（棕地服务增强、绿地全栈开发）
-  - 添加了检查清单功能
-- **BMad Project Management Integration**: Integrated BMad Master project management features
-  - Added document template system (PRD, Project Brief, User Story)
-  - Added workflow support (Brownfield Service Enhancement, Greenfield Full-Stack Development)
-  - Added checklist functionality
-
-### 🎨 改进 / Improvements
-
-- 优化了打包配置，添加了 `.vscodeignore` 文件
-- 更新了插件描述和关键词
-- Optimized packaging configuration with `.vscodeignore` file
-- Updated extension description and keywords
 
 ---
 

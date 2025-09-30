@@ -1,8 +1,8 @@
 {
   "name": "themes-changing",
   "displayName": "Themes Changing",
-  "description": "A Theme changer plugin with BMad project management integration",
-  "version": "0.2.1",
+  "description": "A VS Code theme changer plugin with automatic switching support",
+  "version": "0.2.2",
   "publisher": "AlfredZhao",
   "engines": {
     "vscode": "^1.60.0"
@@ -15,11 +15,7 @@
     "theme",
     "switch",
     "automatic",
-    "time-based",
-    "bmad",
-    "project-management",
-    "documentation",
-    "templates"
+    "time-based"
   ],
   "icon": "media/icon.png",
   "repository": {
@@ -48,36 +44,6 @@
         "command": "themes-changing.toggleStatus",
         "title": "Themes Changing: Toggle Theme Switching (Pause/Resume)",
         "category": "Themes Changing"
-      },
-      {
-        "command": "bmad.help",
-        "title": "BMad: Help",
-        "category": "BMad Master"
-      },
-      {
-        "command": "bmad.task",
-        "title": "BMad: Execute Task",
-        "category": "BMad Master"
-      },
-      {
-        "command": "bmad.createDoc",
-        "title": "BMad: Create Document",
-        "category": "BMad Master"
-      },
-      {
-        "command": "bmad.executeChecklist",
-        "title": "BMad: Execute Checklist",
-        "category": "BMad Master"
-      },
-      {
-        "command": "bmad.documentProject",
-        "title": "BMad: Document Project",
-        "category": "BMad Master"
-      },
-      {
-        "command": "bmad.knowledgeBase",
-        "title": "BMad: Knowledge Base",
-        "category": "BMad Master"
       }
     ],
     "configuration": {
@@ -160,9 +126,5 @@
     "typescript": "5.3.3",
     "vscode-test": "^1.6.1"
   },
-  "license": "MIT",
-  "dependencies": {
-    "@types/js-yaml": "^4.0.9",
-    "js-yaml": "^4.1.0"
-  }
+  "license": "MIT"
 }

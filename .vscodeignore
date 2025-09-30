@@ -8,6 +8,7 @@ tsconfig.json
 node_modules/**
 .vscode/**
 .vscode-test/**
+.serena/**
 
 # 测试文件
 src/test/**
@@ -20,14 +21,14 @@ out/test/**
 .gitignore
 .git/**
 
-# 文档和说明（保留 README.md）
+# 文档和说明（保留 README.md 和 CHANGELOG.md）
 FEATURE_DESIGN.md
 AGENTS.md
-BMAD_INTEGRATION.md
 THEME_SELECTION_FIX.md
-
-# BMad 相关目录（开发工具，不需要打包到插件中）
-.bmad-core/**
+BMAD_REMOVAL_SUMMARY.md
+RELEASE_NOTES_*.md
+发布总结.md
+调试步骤.md
 
 # 构建和临时文件
 *.vsix

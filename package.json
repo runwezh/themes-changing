@@ -2,7 +2,7 @@
   "name": "themes-changing",
   "displayName": "Themes Changing",
   "description": "A Theme changer plugin with BMad project management integration",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "AlfredZhao",
   "engines": {
     "vscode": "^1.60.0"
@@ -32,6 +32,8 @@
   },
   "activationEvents": [
     "onStartupFinished",
+    "onCommand:themes-changing.openSettings",
+    "onCommand:themes-changing.toggleStatus",
     "onCommand:themes-changing.updateConfig"
   ],
   "main": "./out/extension.js",

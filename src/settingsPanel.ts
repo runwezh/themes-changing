@@ -459,9 +459,12 @@ export class SettingsPanel {
             } else {
                 vscode.window.showWarningMessage('Unable to access theme switcher, please restart VS Code to apply changes.');
             }
-            
+
             vscode.window.showInformationMessage('Settings have been saved successfully!');
-            
+
+            // 刷新设置页面以显示最新配置
+            await this._update();
+
         } catch (error) {
             vscode.window.showErrorMessage(`Error saving configuration: ${error}`);
         }

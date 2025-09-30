@@ -503,11 +503,14 @@ export function activate(context: vscode.ExtensionContext) {
     const themeSwitcher = new ThemeSwitcher(context);
     const bmadManager = new BMadManager(context);
 
-    // Initialize BMad Manager
+    // Initialize BMad Manager in background (non-blocking)
+    // 在后台初始化 BMad，不阻塞插件激活
     bmadManager.initialize().then(success => {
         if (success) {
-            vscode.window.showInformationMessage('🧙 BMad Master activated! Use Command Palette: "BMad: Help" to get started.');
+            console.log('BMad Master initialized successfully');
         }
+    }).catch(error => {
+        console.error('BMad initialization failed:', error);
     });
 
     context.subscriptions.push(

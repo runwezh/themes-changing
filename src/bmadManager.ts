@@ -65,13 +65,20 @@ export class BMadManager {
 
     private async loadConfig(): Promise<void> {
         const configPath = path.join(this.bmadPath, 'core-config.yaml');
-        
+
         if (!fs.existsSync(configPath)) {
-            throw new Error('BMad core configuration not found. Please run BMad setup first.');
+            // 配置文件不存在时不抛出错误，只记录日志
+            this.outputChannel.appendLine('BMad configuration not found. BMad features will be disabled.');
+            return;
         }
 
-        const configContent = fs.readFileSync(configPath, 'utf8');
-        this.config = yaml.load(configContent) as BMadConfig;
+        try {
+            const configContent = fs.readFileSync(configPath, 'utf8');
+            this.config = yaml.load(configContent) as BMadConfig;
+        } catch (error) {
+            this.outputChannel.appendLine(`Failed to load BMad config: ${error}`);
+            // 不抛出错误，让插件继续激活
+        }
     }
 
     public async executeCommand(command: string, args?: string[]): Promise<void> {

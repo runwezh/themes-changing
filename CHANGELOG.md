@@ -11,6 +11,15 @@
   - Added `onCommand:themes-changing.openSettings` and `onCommand:themes-changing.toggleStatus` to `activationEvents`
   - Ensures the extension activates correctly when users invoke commands from the command palette
 
+### ✨ 改进 / Improvements
+
+- **自动刷新设置页面**: 保存设置后自动刷新设置页面
+  - 确保页面显示最新的配置信息，包括更新后的当前主题
+  - 改善用户体验，让用户立即看到保存后的效果
+- **Auto-refresh settings page**: Automatically refresh settings page after saving
+  - Ensures the page displays the latest configuration, including the updated current theme
+  - Improves user experience by showing immediate feedback after saving
+
 ### 📝 技术细节 / Technical Details
 
 - 问题根源：在 2025-03-26 重命名插件时，遗漏了在激活事件中添加主要命令

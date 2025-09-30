@@ -6,9 +6,9 @@
 
 ---
 
-## 修复的问题
+## 修复的问题和改进
 
-### ❌ 问题描述
+### ❌ 问题 1: 命令未找到错误
 用户在使用命令面板调用 `Themes Changing: Open Theme Settings` 时，会遇到以下错误：
 
 ```
@@ -36,6 +36,18 @@ command 'themes-changing.openSettings' not found
 - ✅ `Themes Changing: Open Theme Settings`
 - ✅ `Themes Changing: Toggle Theme Switching (Pause/Resume)`
 - ✅ `Themes Changing: Update Config`
+
+### ✨ 改进 2: 自动刷新设置页面
+
+**问题描述**
+用户修改默认主题并保存后，虽然主题会立即应用，但设置页面不会刷新，导致页面显示的信息可能不是最新的。
+
+**改进内容**
+保存设置后自动刷新设置页面：
+- ✅ 页面会重新加载最新的配置信息
+- ✅ 显示更新后的当前主题
+- ✅ 所有配置项都会同步到最新状态
+- ✅ 用户可以立即看到保存后的效果
 
 ---
 
@@ -76,8 +88,8 @@ command 'themes-changing.openSettings' not found
 
 - **版本号**: 0.2.1
 - **发布日期**: 2025-09-30
-- **包大小**: 194 KB
-- **文件数**: 28 个文件
+- **包大小**: 197 KB
+- **文件数**: 30 个文件
 - **发布者**: AlfredZhao
 
 ---
